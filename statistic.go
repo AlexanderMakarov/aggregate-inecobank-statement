@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const outputDateFormat = "2006-01-02"
+
 type Transaction struct {
 	Date                 string
 	Details              string
@@ -60,9 +62,21 @@ func (s *MonthStatistics) String() string {
 	income := directionToString(s.Income)
 	expenses := directionToString(s.Expense)
 	return fmt.Sprintf("Statistics for %s..%s:\n  Income:%s\n  Expenses:%s\n",
-		time.Unix(s.MonthStartTimestamp, 0).Format(DATE_FORMAT),
-		time.Unix(s.MonthEndTimestamp, 0).Format(DATE_FORMAT),
+		time.Unix(s.MonthStartTimestamp, 0).Format(outputDateFormat),
+		time.Unix(s.MonthEndTimestamp, 0).Format(outputDateFormat),
 		income,
 		expenses,
 	)
+}
+
+func BuildStatisticFromRecords(records []*TransactionCsv, monthStart uint) ([]*MonthStatistics, error) {
+	// monthlyStatistic := []*MonthStatistics{}
+	// for _, record := range records {
+	// }
+
+	res := []*MonthStatistics{}
+	// for _, month := range monthlyStatistic {
+
+	// }
+	return res, nil
 }

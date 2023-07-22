@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 
@@ -18,7 +19,10 @@ type LineReader struct {
 
 func InsideCSVReader(reader io.Reader, startKey, endKey string) *LineReader {
 	return &LineReader{
-		scanner:  bufio.NewScanner(transform.NewReader(reader, unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder())),
+		scanner: bufio.NewScanner(transform.NewReader(
+			reader,
+			unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder(),
+		)),
 		startKey: startKey,
 		endKey:   endKey,
 		inRange:  false,
@@ -26,10 +30,13 @@ func InsideCSVReader(reader io.Reader, startKey, endKey string) *LineReader {
 }
 
 func (lr *LineReader) Read(p []byte) (n int, err error) {
+	i := 0
 	if !lr.inRange {
 		for lr.scanner.Scan() {
+			i++
 			line := lr.scanner.Text()
 			if strings.HasPrefix(line, lr.startKey) {
+				fmt.Println("Found start of data on", i, "line.")
 				lr.inRange = true
 				break
 			}
@@ -41,12 +48,14 @@ func (lr *LineReader) Read(p []byte) (n int, err error) {
 
 	buffer := []string{}
 	for lr.scanner.Scan() {
+		i++
 		line := lr.scanner.Text()
 		if strings.HasPrefix(line, lr.endKey) {
+			fmt.Println("Found end of data on", i, "line.")
 			lr.inRange = false
 			break
 		}
-		buffer = append(buffer, line+"\n")
+		buffer = append(buffer, line)
 	}
 
 	if err := lr.scanner.Err(); err != nil {
@@ -58,7 +67,7 @@ func (lr *LineReader) Read(p []byte) (n int, err error) {
 	}
 
 	joinedLines := strings.Join(buffer, "\n")
-	n += copy(p, joinedLines)
+	n = copy(p, joinedLines)
 
 	return n, nil
 }

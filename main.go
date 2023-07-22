@@ -1,118 +1,11 @@
 package main
 
 import (
-	"encoding/csv"
-	"errors"
 	"fmt"
-	"io"
 	"os"
-	"time"
 
 	"github.com/alexflint/go-arg"
-	"github.com/jszwec/csvutil"
 )
-
-const DATE_FORMAT = "2006-01-02"
-
-type TransactionCsv struct {
-	Nn                     string    `csv:"-"`
-	Number                 string    `csv:"-"`
-	Date                   time.Time `csv:",omitempty"`
-	Currency               string    `csv:"-"`
-	Income                 float32   `csv:",omitempty"`
-	Expense                float32   `csv:",omitempty"`
-	RecieverOrPayerAccount string    `csv:"-"`
-	RecieverOrPayer        string    `csv:",omitempty"`
-	Details                string    `csv:",omitempty"`
-}
-
-func buildStatisticFromRecords(records [][]string, monthStart uint) ([]*MonthStatistics, error) {
-	// monthlyStatistic := []*MonthStatistics{}
-	// for _, record := range records {
-	// }
-
-	res := []*MonthStatistics{}
-	// for _, month := range monthlyStatistic {
-
-	// }
-	return res, nil
-}
-
-func ParseInecoStatementCSV(filePath string, monthStart uint) ([]*MonthStatistics, error) {
-	// Open the CSV file
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, errors.Join(errors.New("Error opening '"+filePath+"' file: "), err)
-	}
-	defer file.Close()
-
-	// Scan lines between header (inclusive, needed for csvutils input)
-	// scanner := bufio.NewScanner(file)
-	// dataLines := []string{}
-	// isDataStarted := false
-	// for scanner.Scan() {
-	// 	line := scanner.Text()
-	// 	if isDataStarted {
-	// 		if strings.HasPrefix("Total", line) {
-	// 			break
-	// 		}
-	// 		dataLines = append(dataLines, line)
-	// 	}
-	// 	if line == "n/n,Number,Date,Currency,Income,Expense,Receiver/Payer Account,Receiver/Payer,Details" {
-	// 		// Scan next line to skip header.
-	// 		scanner.Text()
-	// 		isDataStarted = true
-	// 		continue
-	// 	}
-	// }
-
-	reader := InsideCSVReader(
-		file,
-		"n/n,Number,Date,Currency,Income,Expense,Receiver/Payer Account,Receiver/Payer,Details",
-		"Total",
-	)
-
-	// Build csvutil reader.
-	csvReader := csv.NewReader(reader)
-
-	// Provide csvutil with header.
-	transactionsHeader, err := csvutil.Header(TransactionCsv{}, "csv")
-	if err != nil {
-		return nil, errors.Join(errors.New("Wrong header struct is provided for csvutil lib: "), err)
-	}
-
-	dec, err := csvutil.NewDecoder(csvReader, transactionsHeader...)
-	if err != nil {
-		return nil, errors.Join(
-			errors.New("Mismatched to '"+filePath+"' content header struct is provided for csvutil lib: "),
-			err,
-		)
-	}
-	var transactions []TransactionCsv
-	for {
-		var u TransactionCsv
-		if err := dec.Decode(&u); err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, errors.Join(
-				errors.New("Wrong line from '"+filePath+"' is recieved by csvutil lib: "),
-				err,
-			)
-		}
-		transactions = append(transactions, u)
-	}
-
-	// // Create a new CSV reader
-	// reader := csv.NewReader(file)
-
-	// // Read the CSV records
-	// records, err := reader.ReadAll()
-	// if err != nil {
-	// 	return nil, errors.Join(errors.New("Error reading CSV from '"+filePath+"' file: "), err)
-	// }
-
-	return nil, nil //buildStatisticFromRecords(records, monthStart)
-}
 
 var args struct {
 	FilePath         string `arg:"positional" help:"'Statement #############.csv' downloaded from https://online.inecobank.am"`
@@ -146,9 +39,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	stat, err := ParseInecoStatementCSV(args.FilePath, args.MonthStart)
+	rawTransactions, err := ParseTransactionCsvFromInecoCsvFile(args.FilePath)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Can't parse transactions:", err)
+		os.Exit(2)
+	}
+	stat, err := BuildStatisticFromRecords(rawTransactions, args.MonthStart)
+	if err != nil {
+		fmt.Println("Can't build statistic:", err)
 		os.Exit(2)
 	}
 
