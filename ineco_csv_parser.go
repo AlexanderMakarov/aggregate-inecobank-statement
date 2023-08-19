@@ -11,8 +11,6 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
-const inecoCsvDateFormat = "02/01/2006"
-
 type TransactionCsv struct {
 	Nn                     string                  `csv:"nn"`
 	Number                 string                  `csv:"number"`
@@ -31,13 +29,8 @@ type DateTime struct {
 }
 
 func (date *DateTime) UnmarshalCSV(field string) (err error) {
-	date.Time, err = time.Parse(inecoCsvDateFormat, field)
+	date.Time, err = time.Parse(InecoDateFormat, field)
 	return err
-}
-
-// MoneyWith2DecimalPlaces is a wrapper to parse money from "1,500.00" or "1,500" to 150000.
-type MoneyWith2DecimalPlaces struct {
-	int
 }
 
 func (m *MoneyWith2DecimalPlaces) UnmarshalCSV(field string) (err error) {
@@ -49,12 +42,14 @@ func (m *MoneyWith2DecimalPlaces) UnmarshalCSV(field string) (err error) {
 	return nil
 }
 
-func ParseTransactionCsvFromInecoCsvFile(filePath string) ([]*TransactionCsv, error) {
+type CSVParser struct{}
+
+func (p CSVParser) ParseRawTransactionsFromFile(args Args) ([]InecoTransaction, error) {
 
 	// Open the CSV file.
-	file, err := os.Open(filePath)
+	file, err := os.Open(args.FilePath)
 	if err != nil {
-		return nil, fmt.Errorf("Error opening '%s' file: %w", filePath, err)
+		return nil, fmt.Errorf("Error opening '%s' file: %w", args.FilePath, err)
 	}
 	defer file.Close()
 
@@ -94,7 +89,7 @@ func ParseTransactionCsvFromInecoCsvFile(filePath string) ([]*TransactionCsv, er
 
 	transactions := []*TransactionCsv{}
 	if err := gocsv.UnmarshalWithoutHeaders(csvReader, &transactions); err != nil {
-		return nil, fmt.Errorf("Invalid CSV in '%s' file: %w", filePath, err)
+		return nil, fmt.Errorf("Invalid CSV in '%s' file: %w", args.FilePath, err)
 	}
 
 	// Read and parse the remaining lines
@@ -151,7 +146,21 @@ func ParseTransactionCsvFromInecoCsvFile(filePath string) ([]*TransactionCsv, er
 	// 	transactions = append(transactions, transaction)
 	// }
 
-	return transactions, nil
+	inecoTransactions := make([]InecoTransaction, 0, len(transactions))
+	for _, t := range transactions {
+		inecoTransactions = append(inecoTransactions, InecoTransaction{
+			Nn:                     t.Nn,
+			Number:                 t.Number,
+			Date:                   t.Date.Time,
+			Currency:               t.Currency,
+			Income:                 t.Income,
+			Expense:                t.Expense,
+			RecieverOrPayerAccount: t.RecieverOrPayer,
+			RecieverOrPayer:        t.RecieverOrPayer,
+			Details:                t.Details,
+		})
+	}
+	return inecoTransactions, nil
 }
 
 // func (t *TransactionCsv) UnmarshalCSV(fields []string, filePath string) error {
@@ -194,7 +203,7 @@ func ParseTransactionCsvFromInecoCsvFile(filePath string) ([]*TransactionCsv, er
 // }
 
 func parseDate(dateStr string) (*time.Time, error) {
-	date, err := time.Parse(inecoCsvDateFormat, dateStr)
+	date, err := time.Parse(InecoDateFormat, dateStr)
 	if err != nil {
 		return nil, err
 	}
