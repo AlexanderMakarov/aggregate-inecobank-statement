@@ -5,14 +5,16 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/alexflint/go-arg"
 )
 
 type Args struct {
 	FilePath         string `arg:"positional" help:"'Statement #############' CSV (not supported yet) or XML downloaded from https://online.inecobank.am"`
-	MonthStart       uint   `arg:"-s" default:"1" help:"Day of month to treat as a month start."`
+	MonthStart       uint   `arg:"-s" default:"1" help:"Day of month to treat as a month start. By default is 1."`
 	IsDetailedOutput bool   `arg:"-d" default:"false" help:"Print detailed statistic."`
+	TimeZone         string `arg:"-t" default:"Local" help:"Timezone name to use; like 'UTC', 'America/Los_Angeles'. By default is system."`
 }
 
 type FileParser interface {
@@ -35,8 +37,13 @@ func main() {
 	}
 	_, err := os.Stat(args.FilePath)
 	if os.IsNotExist(err) {
-		fmt.Printf("File '%s' does not exist.\n", args.FilePath)
-		os.Exit(1)
+		log.Fatalf("File '%s' does not exist.\n", args.FilePath)
+	}
+
+	// Parse timezone or set system.
+	loc, err := time.LoadLocation(args.TimeZone)
+	if err != nil {
+		log.Fatalf("Unknown timzone name is specified '%s'.\n", args.TimeZone)
 	}
 
 	// Validate month start.
@@ -69,9 +76,21 @@ func main() {
 	// Create statistics builder.
 	ge, err := NewGroupExtractorByDetailsSubstrings(
 		map[string][]string{
-			"Yandex Taxi":   {"YANDEX"},
-			"Vika's health": {"ARABKIR JMC"},
-			"Groceries":     {"CHEESE MARKET"},
+			"Yandex Taxi":    {"YANDEX"},
+			"Vika's health":  {"ARABKIR JMC"},
+			"Sasha's health": {"CRYSTAL DENTAL CLINIC", "CHKA\\10 LEPSUS STR."},
+			"Olya's health":  {"GEGHAMA\\ABOVYAN 34 A", "VARDANANTS"},
+			"Common health":  {"DIALAB", "36.6", "NATALI FARM", "THEOPHARMA", "GEDEON RICHTER", "PHARM"},
+			"Groceries":      {"CHEESE MARKET", "YEREVAN  CITY", "EVRIKA", "MARKET", "FIESTA\\19", "FIX PRICE", "MAQUR TUN", "GRAND CANDY", "MARINE GRIGORYAN", "VOSKE GAGAT", "GAYANE HAKOBYAN", "NARINE VOSKANJAN", "MIKAN GREEN", "KNARIK MKHITARYAN"},
+			"Other account":  {"Account replenishment"},
+			"Wildberries":    {"WILDBERRIES"},
+			"Cash":           {"INECO ATM", "H.HOVHANNISYAN 24/7, ԿԱՆԽԻԿԱՑՈՒՄ"},
+			"Hotels":         {"SANATORIUM"},
+			"Entertainment":  {"AQUATEK", "EATERY", "TASHIR PIZZA", "KARAS", "PLAY CITY", "VICTORY\\2 AZATUTYAN AVE", "NEW CITY DIL 1\\76 MYASNIK", "INSTITUTE OF BOTANY"},
+			"Subscriptions":  {"GOOGLE", "SUBSCRIPTION", "AWS EMEA", "CLOUD"},
+			"Main salary":    {"ամսվա աշխատավարձ"},
+			"Bonuses":        {"մԴԵՎԱՐՏՄ ՍՊԸ Արդշինբանկ  ՓԲԸ/ՊարգՅատրում"},
+			"Vacation pay":   {"մԴԵՎԱՐՏՄ ՍՊԸ/Արձակուրդային վճար"},
 		},
 		args.IsDetailedOutput, // Make "group per uknown transaction" only if "verbose" output requested.
 	)
@@ -81,25 +100,31 @@ func main() {
 	}
 
 	// Build statistic.
-	statistics, err := BuildStatisticFromInecoTransactions(rawTransactions, ge, args.MonthStart)
+	statistics, err := BuildStatisticFromInecoTransactions(rawTransactions, ge, args.MonthStart, loc)
 	if err != nil {
 		fmt.Println("Can't build statistic:", err)
 		os.Exit(2)
 	}
 
-	// Process the received statistics.
-	for _, stat := range statistics {
+	// Process received statistics.
+	for _, s := range statistics {
 		if args.IsDetailedOutput {
-			log.Println(stat)
+			log.Println(s)
 			continue
 		}
 
+		income := MapOfGroupsToString(s.Income)
+		expense := MapOfGroupsToString(s.Expense)
 		log.Printf(
-			"%s..%s:\n  Income:%s\n  Expenses:%s",
-			stat.MonthStartTimestamp.Format(OutputDateFormat),
-			stat.MonthEndTimestamp.Format(OutputDateFormat),
-			MapOfGroupsToString(stat.Income),
-			MapOfGroupsToString(stat.Expense),
+			"\n%s..%s:\n  Income (%d, sum=%s):%s\n  Expenses (%d, sum=%s):%s",
+			s.MonthStartTimestamp.Format(OutputDateFormat),
+			s.MonthEndTimestamp.Format(OutputDateFormat),
+			len(income),
+			MapOfGroupsSum(s.Income),
+			strings.Join(income, ""),
+			len(s.Expense),
+			MapOfGroupsSum(s.Expense),
+			strings.Join(expense, ""),
 		)
 	}
 	log.Printf("Total %d month.", len(statistics))

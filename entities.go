@@ -26,12 +26,12 @@ const OutputDateFormat = "2006-01-02"
 type Transaction struct {
 	Date                 string
 	Details              string
-	Amount2DigitAfterDot uint
+	Amount2DigitAfterDot MoneyWith2DecimalPlaces
 }
 
 type Group struct {
 	Name                      string
-	TotalAmount2DigitAfterDot uint
+	TotalAmount2DigitAfterDot MoneyWith2DecimalPlaces
 	Transactions              []*Transaction
 }
 
