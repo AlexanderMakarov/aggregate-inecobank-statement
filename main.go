@@ -13,7 +13,7 @@ import (
 type Args struct {
 	FilePath         string `arg:"positional" help:"'Statement #############' CSV (not supported yet) or XML downloaded from https://online.inecobank.am"`
 	MonthStart       uint   `arg:"-s" default:"1" help:"Day of month to treat as a month start. By default is 1."`
-	IsDetailedOutput bool   `arg:"-d" default:"false" help:"Print detailed statistic."`
+	IsDetailedOutput bool   `arg:"-v" default:"false" help:"Print detailed statistic."`
 	TimeZone         string `arg:"-t" default:"Local" help:"Timezone name to use; like 'UTC', 'America/Los_Angeles'. By default is system."`
 }
 
@@ -113,12 +113,13 @@ func main() {
 			continue
 		}
 
+		// Note that this logic is intentionally separate from `func (s *IntervalStatistic) String()`.
 		income := MapOfGroupsToString(s.Income)
 		expense := MapOfGroupsToString(s.Expense)
 		log.Printf(
 			"\n%s..%s:\n  Income (%d, sum=%s):%s\n  Expenses (%d, sum=%s):%s",
-			s.MonthStartTimestamp.Format(OutputDateFormat),
-			s.MonthEndTimestamp.Format(OutputDateFormat),
+			s.Start.Format(OutputDateFormat),
+			s.End.Format(OutputDateFormat),
 			len(income),
 			MapOfGroupsSum(s.Income),
 			strings.Join(income, ""),

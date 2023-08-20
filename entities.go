@@ -24,20 +24,20 @@ type InecoTransaction struct {
 const OutputDateFormat = "2006-01-02"
 
 type Transaction struct {
-	Date                 string
-	Details              string
-	Amount2DigitAfterDot MoneyWith2DecimalPlaces
+	Date    time.Time
+	Details string
+	Amount  MoneyWith2DecimalPlaces
 }
 
 type Group struct {
-	Name                      string
-	TotalAmount2DigitAfterDot MoneyWith2DecimalPlaces
-	Transactions              []*Transaction
+	Name         string
+	Total        MoneyWith2DecimalPlaces
+	Transactions []*Transaction
 }
 
-type MonthStatistics struct {
-	MonthStartTimestamp time.Time
-	MonthEndTimestamp   time.Time
-	Income              map[string]Group
-	Expense             map[string]Group
+type IntervalStatistic struct {
+	Start   time.Time
+	End     time.Time
+	Income  map[string]*Group
+	Expense map[string]*Group
 }
