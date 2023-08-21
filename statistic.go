@@ -18,11 +18,12 @@ func (t *InecoTransaction) toTransaction() (trans Transaction, isExpense bool) {
 		amount = t.Income
 		isExpense = false
 	}
-	return Transaction{
+	trans = Transaction{
 		Date:    t.Date,
 		Details: t.Details,
 		Amount:  amount,
-	}, isExpense
+	}
+	return
 }
 
 func (t *Transaction) String() string {
@@ -137,17 +138,17 @@ type IntervalStatisticsBuilder interface {
 
 const UnknownGroupName = "unknown"
 
-// groupExtractorByDetailsSubstrings is `IntervalStatisticsBuilder` which uses
+// groupExtractorByDetailsSubstrings is [main.IntervalStatisticsBuilder] which uses
 // `InecoTransaction.Details` field to choose right group. Logic is following:
 //  1. Find is group for expenses of incomes.
-//  2. Search group in `substringsToGroup` field. If there are such then update it.
+//  2. Search group in `substringsToGroupName` field. If there are such then update it.
 //  3. Otherwise check isGroupAllUnknown value:
 //  4. If `false` then create new group with name equal to `InecoTransaction.Details` field
 //  5. If `true` then add into single group with name from `UnknownGroupName` constant.
 type groupExtractorByDetailsSubstrings struct {
 	intervalStats          *IntervalStatistic
 	groupNamesToSubstrings map[string][]string
-	substringsToGroup      map[string]*Group
+	substringsToGroupName  map[string]string
 	isGroupAllUnknown      bool
 }
 
@@ -164,13 +165,22 @@ func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans *InecoTransac
 
 	// Try to find group in configuration.
 	found := false
-	for substring, group := range s.substringsToGroup {
+	for substring, groupName := range s.substringsToGroupName {
 		if strings.Contains(trans.Details, substring) {
+			// Refresh group from the map! Because golang makes copy of `group` which leads to flacky behavior.
+			existingGroup, exists := mapOfGroups[groupName]
+			if !exists {
+				// If the group doesn't exist in the map, create a new one.
+				existingGroup = &Group{
+					Name:         groupName,
+					Total:        MoneyWith2DecimalPlaces{},
+					Transactions: []*Transaction{},
+				}
+				mapOfGroups[groupName] = existingGroup
+			}
+			existingGroup.Transactions = append(existingGroup.Transactions, &statTransaction)
+			existingGroup.Total.int += statTransaction.Amount.int
 			found = true
-			updatedGroup := group
-			updatedGroup.Transactions = append(updatedGroup.Transactions, &statTransaction)
-			updatedGroup.Total.int += statTransaction.Amount.int
-			mapOfGroups[group.Name] = updatedGroup
 			break
 		}
 	}
@@ -193,8 +203,8 @@ func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans *InecoTransac
 			// If not exists, create new and add to group.
 			newGroup := Group{
 				Name:         groupName,
-				Transactions: []*Transaction{&statTransaction},
 				Total:        statTransaction.Amount,
+				Transactions: []*Transaction{&statTransaction},
 			}
 			mapOfGroups[newGroup.Name] = &newGroup
 		}
@@ -209,8 +219,9 @@ func (s groupExtractorByDetailsSubstrings) GetIntervalStatistic() *IntervalStati
 
 type GroupExtractorBuilder func(start, end time.Time) IntervalStatisticsBuilder
 
-// NewGroupExtractorByDetailsSubstrings returns `GroupExtractorBuilder` which builds
-// `groupExtractorByDetailsSubstrings` in a safe way.
+// NewGroupExtractorByDetailsSubstrings returns
+// [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.GroupExtractorBuilder] which builds
+// [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.groupExtractorByDetailsSubstrings] in a safe way.
 func NewGroupExtractorByDetailsSubstrings(
 	groupNamesToSubstrings map[string][]string,
 	isGroupAllUnknownTransactions bool,
@@ -232,14 +243,6 @@ func NewGroupExtractorByDetailsSubstrings(
 
 	return func(start, end time.Time) IntervalStatisticsBuilder {
 
-		// Create map of new Group-s for each MonthStatistic.
-		substringsToGroup := map[string]*Group{}
-		for substring, name := range substringsToGroupName {
-			if _, exist := substringsToGroup[substring]; !exist {
-				substringsToGroup[substring] = &Group{Name: name}
-			}
-		}
-
 		// Return new groupExtractorByDetailsSubstrings.
 		return groupExtractorByDetailsSubstrings{
 			intervalStats: &IntervalStatistic{
@@ -249,14 +252,15 @@ func NewGroupExtractorByDetailsSubstrings(
 				Expense: make(map[string]*Group),
 			},
 			groupNamesToSubstrings: groupNamesToSubstrings,
-			substringsToGroup:      substringsToGroup,
+			substringsToGroupName:  substringsToGroupName,
 			isGroupAllUnknown:      isGroupAllUnknownTransactions,
 		}
 	}, nil
 }
 
-// BuildStatisticFromInecoTransactions builds a MonthStatistics from provided transactions
-// with specified month start day. It uses given groupExtractorBuilder to make “
+// BuildStatisticFromInecoTransactions builds list of
+// [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.IntervalStatistic] from provided transactions
+// with specified configuration.
 func BuildStatisticFromInecoTransactions(
 	transactions []InecoTransaction,
 	groupExtractorBuilder GroupExtractorBuilder,
