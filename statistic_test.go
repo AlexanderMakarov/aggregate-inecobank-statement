@@ -51,7 +51,7 @@ func Test_NewGroupExtractorByDetailsSubstrings(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			// Act
-			builder, err := NewGroupExtractorByDetailsSubstrings(tt.groupNamesToSubstrings,
+			builder, err := NewStatisticBuilderByDetailsSubstrings(tt.groupNamesToSubstrings,
 				tt.isGroupAllUnknownTransactions)
 			actualGE := builder(now, nowPlusMonth)
 

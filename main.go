@@ -41,7 +41,7 @@ func main() {
 	}
 
 	// Parse timezone or set system.
-	loc, err := time.LoadLocation(args.TimeZone)
+	timeZone, err := time.LoadLocation(args.TimeZone)
 	if err != nil {
 		log.Fatalf("Unknown timzone name is specified '%s'.\n", args.TimeZone)
 	}
@@ -74,25 +74,25 @@ func main() {
 	log.Printf("Found %d transactions.", len(rawTransactions))
 
 	// Create statistics builder.
-	ge, err := NewGroupExtractorByDetailsSubstrings(
+	groupExtractorFactory, err := NewStatisticBuilderByDetailsSubstrings(
 		map[string][]string{
 			"Yandex Taxi":    {"YANDEX"},
 			"Vika's health":  {"ARABKIR JMC"},
 			"Sasha's health": {"CRYSTAL DENTAL CLINIC", "CHKA\\10 LEPSUS STR."},
 			"Olya's health":  {"GEGHAMA\\ABOVYAN 34 A", "VARDANANTS"},
 			"Common health":  {"DIALAB", "36.6", "NATALI FARM", "THEOPHARMA", "GEDEON RICHTER", "PHARM"},
-			"Groceries":      {"CHEESE MARKET", "YEREVAN  CITY", "EVRIKA", "MARKET", "FIESTA\\19", "FIX PRICE", "MAQUR TUN", "GRAND CANDY", "MARINE GRIGORYAN", "VOSKE GAGAT", "GAYANE HAKOBYAN", "NARINE VOSKANJAN", "MIKAN GREEN", "KNARIK MKHITARYAN"},
+			"Groceries":      {"CHEESE MARKET", "YEREVAN  CITY", "YEREVAN CITY", "EVRIKA", "MARKET", "FIESTA\\19", "FIX PRICE", "MAQUR TUN", "GRAND CANDY", "MARINE GRIGORYAN", "VOSKE GAGAT", "GAYANE HAKOBYAN", "NARINE VOSKANJAN", "MIKAN GREEN", "KNARIK MKHITARYAN"},
 			"Other account":  {"Account replenishment"},
 			"Wildberries":    {"WILDBERRIES"},
 			"Cash":           {"INECO ATM", "H.HOVHANNISYAN 24/7, ԿԱՆԽԻԿԱՑՈՒՄ"},
 			"Hotels":         {"SANATORIUM"},
 			"Entertainment":  {"AQUATEK", "EATERY", "TASHIR PIZZA", "KARAS", "PLAY CITY", "VICTORY\\2 AZATUTYAN AVE", "NEW CITY DIL 1\\76 MYASNIK", "INSTITUTE OF BOTANY"},
 			"Subscriptions":  {"GOOGLE", "SUBSCRIPTION", "AWS EMEA", "CLOUD"},
-			"Main salary":    {"ամսվա աշխատավարձ"},
+			"Main salary":    {"ամսվա աշխատավարձ", "ԱՄՍՎԱ ԱՇԽԱՏԱՎԱՐՁ"},
 			"Bonuses":        {"մԴԵՎԱՐՏՄ ՍՊԸ Արդշինբանկ  ՓԲԸ/ՊարգՅատրում"},
 			"Vacation pay":   {"մԴԵՎԱՐՏՄ ՍՊԸ/Արձակուրդային վճար"},
 		},
-		args.IsDetailedOutput, // Make "group per uknown transaction" only if "verbose" output requested.
+		!args.IsDetailedOutput, // Make "group per uknown transaction" only if "verbose" output requested.
 	)
 	if err != nil {
 		fmt.Println("Can't create statistic builder:", err)
@@ -100,7 +100,12 @@ func main() {
 	}
 
 	// Build statistic.
-	statistics, err := BuildStatisticFromInecoTransactions(rawTransactions, ge, args.MonthStart, loc)
+	statistics, err := BuildMonthlyStatisticFromInecoTransactions(
+		rawTransactions,
+		groupExtractorFactory,
+		args.MonthStart,
+		timeZone,
+	)
 	if err != nil {
 		fmt.Println("Can't build statistic:", err)
 		os.Exit(2)

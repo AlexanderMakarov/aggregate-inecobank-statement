@@ -217,15 +217,15 @@ func (s groupExtractorByDetailsSubstrings) GetIntervalStatistic() *IntervalStati
 	return s.intervalStats
 }
 
-type GroupExtractorBuilder func(start, end time.Time) IntervalStatisticsBuilder
+type StatisticBuilderFactory func(start, end time.Time) IntervalStatisticsBuilder
 
-// NewGroupExtractorByDetailsSubstrings returns
+// NewStatisticBuilderByDetailsSubstrings returns
 // [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.GroupExtractorBuilder] which builds
 // [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.groupExtractorByDetailsSubstrings] in a safe way.
-func NewGroupExtractorByDetailsSubstrings(
+func NewStatisticBuilderByDetailsSubstrings(
 	groupNamesToSubstrings map[string][]string,
 	isGroupAllUnknownTransactions bool,
-) (GroupExtractorBuilder, error) {
+) (StatisticBuilderFactory, error) {
 
 	// Invert groupNamesToSubstrings and check for duplicates.
 	substringsToGroupName := map[string]string{}
@@ -258,12 +258,12 @@ func NewGroupExtractorByDetailsSubstrings(
 	}, nil
 }
 
-// BuildStatisticFromInecoTransactions builds list of
-// [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.IntervalStatistic] from provided transactions
-// with specified configuration.
-func BuildStatisticFromInecoTransactions(
+// BuildMonthlyStatisticFromInecoTransactions builds list of
+// [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.IntervalStatistic]
+// per each month from provided transactions.
+func BuildMonthlyStatisticFromInecoTransactions(
 	transactions []InecoTransaction,
-	groupExtractorBuilder GroupExtractorBuilder,
+	statisticBuilderFactory StatisticBuilderFactory,
 	monthStart uint,
 	timeLocation *time.Location,
 ) ([]*IntervalStatistic, error) {
@@ -272,38 +272,38 @@ func BuildStatisticFromInecoTransactions(
 	sort.Sort(InecoTransactionList(transactions))
 
 	var stats []*IntervalStatistic
-	var current IntervalStatisticsBuilder
+	var statBuilder IntervalStatisticsBuilder
 
 	// Get first month boundaries from the first transaction. Build first month statistics.
-	monthStartDate := time.Date(transactions[0].Date.Year(), transactions[0].Date.Month(),
+	start := time.Date(transactions[0].Date.Year(), transactions[0].Date.Month(),
 		int(monthStart), 0, 0, 0, 0, timeLocation)
-	monthEndDate := monthStartDate.AddDate(0, 1, 0).Add(-1 * time.Nanosecond)
-	current = groupExtractorBuilder(monthStartDate, monthEndDate)
+	end := start.AddDate(0, 1, 0).Add(-1 * time.Nanosecond)
+	statBuilder = statisticBuilderFactory(start, end)
 
 	// Iterate through all the transactions.
 	for _, trans := range transactions {
 
 		// Check if this transaction is part of the new month.
-		if trans.Date.After(monthEndDate) {
+		if trans.Date.After(end) {
 
 			// Save previous month statistic if there is one.
-			stats = append(stats, current.GetIntervalStatistic())
+			stats = append(stats, statBuilder.GetIntervalStatistic())
 
 			// Calculate start and end of the next month.
-			monthStartDate = time.Date(trans.Date.Year(), trans.Date.Month(), int(monthStart), 0, 0, 0, 0, timeLocation)
-			monthEndDate = monthStartDate.AddDate(0, 1, 0).Add(-1 * time.Nanosecond)
-			current = groupExtractorBuilder(monthStartDate, monthEndDate)
+			start = time.Date(trans.Date.Year(), trans.Date.Month(), int(monthStart), 0, 0, 0, 0, timeLocation)
+			end = start.AddDate(0, 1, 0).Add(-1 * time.Nanosecond)
+			statBuilder = statisticBuilderFactory(start, end)
 		}
 
 		// Handle transaction.
-		if err := current.HandleTransaction(&trans); err != nil {
+		if err := statBuilder.HandleTransaction(&trans); err != nil {
 			return nil, err
 		}
 	}
 
 	// Add last MonthStatistics.
-	if current != nil {
-		stats = append(stats, current.GetIntervalStatistic())
+	if statBuilder != nil {
+		stats = append(stats, statBuilder.GetIntervalStatistic())
 	}
 	return stats, nil
 }
