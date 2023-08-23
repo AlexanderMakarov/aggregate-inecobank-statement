@@ -55,7 +55,8 @@ TBD
 7. Save configuration file for the future use. With time it may require some updates.
 
 # TODO
-- Add support of statements from different accounts.
-- Parse settings from the file.
-- Add CI/CD with builds for Unix/Windows/MacOS.
-- Update README.
+- [x] Add support of statements from different accounts.
+- [x] Parse settings from the file.
+- [ ] Provide good start config.
+- [ ] Add CI/CD with builds for Unix/Windows/MacOS.
+- [ ] Update README.

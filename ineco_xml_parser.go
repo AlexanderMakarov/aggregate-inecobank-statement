@@ -70,12 +70,12 @@ type XmlParser struct {
 }
 
 // ParseRawTransactionsFromFile implements FileParser.
-func (XmlParser) ParseRawTransactionsFromFile(args Args) ([]InecoTransaction, error) {
+func (XmlParser) ParseRawTransactionsFromFile(filePath string) ([]InecoTransaction, error) {
 
 	// Open XML file.
-	file, err := os.Open(args.FilePath)
+	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("Error opening '%s' file: %w", args.FilePath, err)
+		return nil, fmt.Errorf("Error opening '%s' file: %w", filePath, err)
 	}
 	defer file.Close()
 

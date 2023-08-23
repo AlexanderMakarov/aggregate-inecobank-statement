@@ -44,12 +44,12 @@ func (m *MoneyWith2DecimalPlaces) UnmarshalCSV(field string) (err error) {
 
 type CSVParser struct{}
 
-func (p CSVParser) ParseRawTransactionsFromFile(args Args) ([]InecoTransaction, error) {
+func (p CSVParser) ParseRawTransactionsFromFile(filePath string) ([]InecoTransaction, error) {
 
 	// Open the CSV file.
-	file, err := os.Open(args.FilePath)
+	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("Error opening '%s' file: %w", args.FilePath, err)
+		return nil, fmt.Errorf("Error opening '%s' file: %w", filePath, err)
 	}
 	defer file.Close()
 
@@ -89,7 +89,7 @@ func (p CSVParser) ParseRawTransactionsFromFile(args Args) ([]InecoTransaction, 
 
 	transactions := []*TransactionCsv{}
 	if err := gocsv.UnmarshalWithoutHeaders(csvReader, &transactions); err != nil {
-		return nil, fmt.Errorf("Invalid CSV in '%s' file: %w", args.FilePath, err)
+		return nil, fmt.Errorf("Invalid CSV in '%s' file: %w", filePath, err)
 	}
 
 	// Read and parse the remaining lines
