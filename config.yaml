@@ -1,0 +1,64 @@
+# Write "glob" template to your "Statement" files.
+# Glob supports wildcard "star" (*) which replaces any substring in the path.
+StatementFilesGlob: "Statement*.xml"
+# Flag to output all information about the result.
+detailedOutput: true
+# Flag to aggregate all transactions with "Details" not matched with "substrings"
+# from 'groupNamesToSubstrings' below into single group with name "unknown".
+groupAllUnknownTransactions: true
+# Which day of month use as start of the month.
+# Sometimes it makes sense to analyze month from the "salary day. 
+monthStartDayNumber: 1
+# List of strings to ignore from list of transactions.
+# May be useful if your are transferring between your accounts and statement from this account is provided.
+# In this case extra incomes and expences won't appear.
+ignoreSubstrings:
+  - Փոխանցում իմ հաշիվների միջև, Account replenishment, InecoOnline
+# Dictionary of group names to list of substrings to search in transaction's "Details" field.
+# Note that order is not guaranteed.
+groupNamesToSubstrings:
+  Yandex Taxi:
+    - YANDEX
+  Health:
+    - ARABKIR JMC
+    - CRYSTAL DENTAL CLINIC
+    - GEGHAMA\ABOVYAN 34 A
+    - VARDANANTS
+  Pharmacies:
+    - PHARM
+    - DIALAB
+    - 36.6
+    - NATALI FARM
+    - THEOPHARMA
+    - GEDEON RICHTER
+  Groceries:
+    - CHEESE MARKET
+    - YEREVAN  CITY
+    - YEREVAN CITY
+    - EVRIKA
+    - MARKET
+    - FIESTA\19
+    - FIX PRICE
+    - MAQUR TUN
+    - GRAND CANDY
+  To other account:
+    - Account replenishment
+  Wildberries:
+    - WILDBERRIES
+  Cash:
+    - INECO ATM
+  Entertainment:
+    - AQUATEK
+    - EATERY
+    - TASHIR PIZZA
+    - KARAS
+    - PLAY CITY
+    - INSTITUTE OF BOTANY
+  Subscriptions:
+    - GOOGLE
+    - SUBSCRIPTION
+    - AWS EMEA
+    - CLOUD
+  Salary:
+    - ամսվա աշխատավարձ
+    - ԱՄՍՎԱ ԱՇԽԱՏԱՎԱՐՁ

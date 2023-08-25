@@ -48,15 +48,16 @@ TBD
 5. Update configuration file with some unique for specific transaction substrings to aggregate transaction into.
    See example in configuration file - you may remove not needed and add your own groups.
 6. Run binary again, and repeat configuration changes if need.
-   When number of groups with "from Details" names would decrease to small enough number
-   set `groupAllUnknownTransactions` to `true` and `detailedOutput` to `false` in configuration file.
-   It would cause to put all transactions which not matched by `grouping` substrings into one "unknown" group
-   and remove output of transactions. Now binary would provide good and useful information from your statements.
-7. Save configuration file for the future use. With time it may require some updates.
+   When number of transactions in "unknown" group would decrease to small enough number
+   set `detailedOutput` to `false` in configuration file to hide detalization by transactions.
+   If you still want to see all these "unknown" transactions then consider to set
+   `groupAllUnknownTransactions` to `false` - it will cause to put new groups with name equal to "Details" field value.
+7. Run binary again - it should provide clean report for manual investigation, comparing months, etc.
 
 # TODO
 - [x] Add support of statements from different accounts.
 - [x] Parse settings from the file.
-- [ ] Provide good start config.
+- [x] Configure way to skip transactions from other file.
+- [x] Provide good start config.
 - [ ] Add CI/CD with builds for Unix/Windows/MacOS.
 - [ ] Update README.

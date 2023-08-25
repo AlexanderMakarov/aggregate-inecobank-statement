@@ -10,11 +10,12 @@ import (
 
 type Config struct {
 	StatementFilesGlob          string              `yaml:"StatementFilesGlob" validate:"required,filepath"`
-	GroupNamesToSubstrings      map[string][]string `yaml:"groupNamesToSubstrings"`
 	DetailedOutput              bool                `yaml:"detailedOutput"`
 	MonthStartDayNumber         uint                `yaml:"monthStartDayNumber" validate:"min=1,max=31"`
 	TimeZoneLocation            string              `yaml:"TimeZoneLocation" validate:"timezone"`
 	GroupAllUnknownTransactions bool                `yaml:"groupAllUnknownTransactions"`
+	GroupNamesToSubstrings      map[string][]string `yaml:"groupNamesToSubstrings"`
+	IgnoreSubstrings            []string            `yaml:"ignoreSubstrings"`
 }
 
 func readConfig(filename string) (*Config, error) {

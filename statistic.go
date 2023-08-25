@@ -150,6 +150,7 @@ type groupExtractorByDetailsSubstrings struct {
 	groupNamesToSubstrings map[string][]string
 	substringsToGroupName  map[string]string
 	isGroupAllUnknown      bool
+	ignoreSubstrings       []string
 }
 
 func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans *InecoTransaction) error {
@@ -161,6 +162,13 @@ func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans *InecoTransac
 		mapOfGroups = s.intervalStats.Expense
 	} else {
 		mapOfGroups = s.intervalStats.Income
+	}
+
+	// First check that need to ignore transaction.
+	for _, substring := range s.ignoreSubstrings {
+		if strings.Contains(trans.Details, substring) {
+			return nil
+		}
 	}
 
 	// Try to find group in configuration.
@@ -225,6 +233,7 @@ type StatisticBuilderFactory func(start, end time.Time) IntervalStatisticsBuilde
 func NewStatisticBuilderByDetailsSubstrings(
 	groupNamesToSubstrings map[string][]string,
 	isGroupAllUnknownTransactions bool,
+	ignoreSubstrings []string,
 ) (StatisticBuilderFactory, error) {
 
 	// Invert groupNamesToSubstrings and check for duplicates.
@@ -254,6 +263,7 @@ func NewStatisticBuilderByDetailsSubstrings(
 			groupNamesToSubstrings: groupNamesToSubstrings,
 			substringsToGroupName:  substringsToGroupName,
 			isGroupAllUnknown:      isGroupAllUnknownTransactions,
+			ignoreSubstrings:       ignoreSubstrings,
 		}
 	}, nil
 }

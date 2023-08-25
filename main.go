@@ -46,6 +46,7 @@ func main() {
 	groupExtractorFactory, err := NewStatisticBuilderByDetailsSubstrings(
 		config.GroupNamesToSubstrings,
 		config.GroupAllUnknownTransactions,
+		config.IgnoreSubstrings,
 	)
 	if err != nil {
 		log.Fatalln("Can't create statistic builder:", err)
