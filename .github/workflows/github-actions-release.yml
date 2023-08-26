@@ -73,7 +73,7 @@ jobs:
         run: |
           version=`date +'%Y.%m.%d.%H:%M:%S'`".${GITHUB_REF_NAME}"
           curtag=${GITHUB_REF_NAME}
-          prevtag=`git describe --tags --abbrev=0 HEAD^`
+          prevtag=`git describe --tags --abbrev=0 HEAD^1`
 
           git log --format=%B -n 1 > body.log
           if git tag | grep ${prevtag} ; then
