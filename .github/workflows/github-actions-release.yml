@@ -1,0 +1,116 @@
+# date +'%Y.%m.%d.%H:%M:%S'
+name: build-release-binaries
+
+run-name: Create Github Release
+
+on: 
+  push:
+    branches:
+    - master
+    tags:
+    - '*'
+
+jobs:
+
+  # Job to run always when CI is triggered.
+  check_code:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Dump env
+        run: env | sort
+
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "GITHUB_CONTEXT=$GITHUB_CONTEXT"
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.20.6'
+
+      - name: Get dependencies
+        run: go get -v -t -d
+
+      - name: Lint
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+  # Job to release artifacts only if tag was pushed.
+  build_and_release:
+    needs: check_code
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    strategy:
+      matrix:
+        os: [windows, darwin, linux]
+        arch: [amd64, arm64]
+
+    steps:
+      # 3 steps below are lazily copy-pasted from the job above. See https://stackoverflow.com/a/71570847/1535127.
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.20.6'
+
+      - name: Get dependencies
+        run: go get -v -t -d ./... # Will use cached dependencies.
+
+      - name: Assemble version and release notes from commit messages
+        id: vars
+        run: |
+          version=`date +'%Y.%m.%d.%H:%M:%S'`".${GITHUB_REF_NAME}"
+          curtag=${GITHUB_REF_NAME}
+          prevtag=`git describe --tags --abbrev=0 HEAD^`
+
+          git log --format=%B -n 1 > body.log
+          if git tag | grep ${prevtag} ; then
+            git log -q ${curtag}...${prevtag} --pretty="- %s" -q --no-color >> body.log
+          else
+            git log --pretty="- %s" -q --no-color >> body.log
+          fi
+          line_count=$(cat body.log | wc -l)
+
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "curtag=$curtag" >> $GITHUB_OUTPUT
+          echo "prevtag=$prevtag" >> $GITHUB_OUTPUT
+          echo "line_count=$line_count" >> $GITHUB_OUTPUT
+
+      - run: echo curtag is ${{ steps.vars.outputs.version }}
+      - run: echo curtag is ${{ steps.vars.outputs.curtag }}
+      - run: echo prevtag is ${{ steps.vars.outputs.prevtag }}
+      - run: echo line_count is ${{ steps.vars.outputs.line_count }}
+      - run: cat body.log
+
+      - name: Build Binaries
+        run: |
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build \
+            -o aggregate-inecobank-statements-${{ matrix.os }}-${{ matrix.arch }} \
+            -ldflags "-X main.Version=$${{ steps.vars.outputs.version }}" main.go
+      
+      - name: Upload Binaries
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ steps.vars.outputs.version }}
+          tag: ${{ env.GITHUB_REF_NAME }}
+          bodyFile: "body.log"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: |
+            aggregate-inecobank-statements-linux-amd64
+            aggregate-inecobank-statements-linux-arm64
+            aggregate-inecobank-statements-windows-amd64.exe
+            aggregate-inecobank-statements-windows-arm64.exe
+            aggregate-inecobank-statements-darwin-arm64
+            aggregate-inecobank-statements-darwin-arm64

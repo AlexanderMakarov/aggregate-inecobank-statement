@@ -16,7 +16,11 @@ type FileParser interface {
 	ParseRawTransactionsFromFile(filePath string) ([]InecoTransaction, error)
 }
 
+// Version is application version string and should be updated with `go build -ldflags`.
+var Version = "development"
+
 func main() {
+	log.Printf("Version %s", Version)
 	configPath := "config.yaml"
 
 	// Parse arguments and set configPath.
