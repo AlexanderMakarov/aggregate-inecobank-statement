@@ -107,13 +107,13 @@ jobs:
           GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build \
             -o aggregate-inecobank-statements-${{ matrix.os }}-${{ matrix.arch }} \
             -ldflags "-X main.Version=$${{ steps.vars.outputs.version }}"
-      
+
       - name: Upload Binaries
         uses: ncipollo/release-action@v1
         with:
           name: ${{ steps.vars.outputs.version }}
           bodyFile: "body.log"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GHACTIONS_PUBLIC_REPO_RW }}
           artifacts: aggregate-inecobank-statements-linux-amd64
           # TODO revert artifacts: |
           #   aggregate-inecobank-statements-linux-amd64
