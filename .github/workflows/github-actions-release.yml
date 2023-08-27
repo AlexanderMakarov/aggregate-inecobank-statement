@@ -112,13 +112,13 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           name: ${{ steps.vars.outputs.version }}
-          tag: ${{ env.GITHUB_REF_NAME }}
           bodyFile: "body.log"
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: |
-            aggregate-inecobank-statements-linux-amd64
-            aggregate-inecobank-statements-linux-arm64
-            aggregate-inecobank-statements-windows-amd64.exe
-            aggregate-inecobank-statements-windows-arm64.exe
-            aggregate-inecobank-statements-darwin-arm64
-            aggregate-inecobank-statements-darwin-arm64
+          artifacts: aggregate-inecobank-statements-linux-amd64
+          # TODO revert artifacts: |
+          #   aggregate-inecobank-statements-linux-amd64
+          #   aggregate-inecobank-statements-linux-arm64
+          #   aggregate-inecobank-statements-windows-amd64.exe
+          #   aggregate-inecobank-statements-windows-arm64.exe
+          #   aggregate-inecobank-statements-darwin-arm64
+          #   aggregate-inecobank-statements-darwin-arm64
