@@ -106,7 +106,7 @@ jobs:
         run: |
           GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build \
             -o aggregate-inecobank-statements-${{ matrix.os }}-${{ matrix.arch }} \
-            -ldflags "-X main.Version=$${{ steps.vars.outputs.version }}" main.go
+            -ldflags "-X main.Version=$${{ steps.vars.outputs.version }}"
       
       - name: Upload Binaries
         uses: ncipollo/release-action@v1
