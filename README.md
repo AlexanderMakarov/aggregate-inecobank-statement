@@ -60,4 +60,5 @@ TBD
 - [x] Configure way to skip transactions from other file.
 - [x] Provide good start config.
 - [ ] Add CI/CD with builds for Unix/Windows/MacOS.
+- [ ] Clean extra tags from the repo.
 - [ ] Update README.
