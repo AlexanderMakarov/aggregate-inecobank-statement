@@ -75,8 +75,8 @@ jobs:
       - name: Assemble version and release notes from commit messages
         id: vars
         run: |
-          run pwd
-          run git --version
+          pwd
+          git --version
           version=`date +'%Y.%m.%d.%H:%M:%S'`".${GITHUB_REF_NAME}"
           curtag=${GITHUB_REF_NAME}
           prevtag=`git describe --tags --abbrev=0 HEAD^1`
