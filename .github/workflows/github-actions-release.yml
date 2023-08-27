@@ -63,6 +63,8 @@ jobs:
       # 3 steps below are lazily copy-pasted from the job above. See https://stackoverflow.com/a/71570847/1535127.
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Get all tags, needed to get git log.
 
       - name: Setup Go environment
         uses: actions/setup-go@v4
