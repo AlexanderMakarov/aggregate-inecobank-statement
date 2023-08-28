@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 // getAbsolutePath checks if a file exists and returns its absolute path.
@@ -29,4 +31,24 @@ func getFilesByGlob(glob string) ([]string, error) {
 		return nil, err
 	}
 	return files, nil
+}
+
+// openFileInOS opens file in OS-specific viewer.
+func openFileInOS(url string) error {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }

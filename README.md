@@ -34,19 +34,24 @@ But world is full of "don't care/know" developers and CSV-s with rows formatted 
 
 # How to use
 
-TBD
-1. Download binary for your operating system from
+1. Download binary ("aggregate-inecobank-statements-\*-\*" file) for your operating system from
+   [Releases](https://github.com/AlexanderMakarov/aggregate-inecobank-statement/releases) page.
 2. Download "Statement ....xml" file from https://online.inecobank.am.
    Click of account from which you want analyze expenses,
    next put into 'From' and 'To' fields dates you want to analyze,
    press 'Search', scroll page to bottom and here at right corner will be 5 icons to download statement.
    Press XML button and save file as "Statement.xml" near the binary.
-3. Download example of configuration. Don't need to update it yet, see step 5.
-4. Run binary. It would provide list with a lot of groups where (most probably)
+3. Download example of configuration
+   [config.yaml](https://github.com/AlexanderMakarov/aggregate-inecobank-statement/raw/master/config.yaml).
+   Don't need to update it yet, see step 5.
+4. Run binary ("aggregate-inecobank-statements-\*-\*" file).
+   It would open text file with list from a lot of groups where (most probably)
    a lot of names would be taken from "Details" field of transactions but some of them
-   would be from example config.
-5. Update configuration file with some unique for specific transaction substrings to aggregate transaction into.
+   would be from the example config groups.
+5. Investigate your personal transaction information and update configuration file groups with some unique
+   for specific transaction substrings to aggregate transaction into these groups.
    See example in configuration file - you may remove not needed and add your own groups.
+   Be careful about syntax and indentations.
 6. Run binary again, and repeat configuration changes if need.
    When number of transactions in "unknown" group would decrease to small enough number
    set `detailedOutput` to `false` in configuration file to hide detalization by transactions.
@@ -59,6 +64,6 @@ TBD
 - [x] Parse settings from the file.
 - [x] Configure way to skip transactions from other file.
 - [x] Provide good start config.
-- [ ] Add CI/CD with builds for Unix/Windows/MacOS.
+- [x] Add CI/CD with builds for Unix/Windows/MacOS.
 - [ ] Clean extra tags from the repo.
 - [ ] Update README.

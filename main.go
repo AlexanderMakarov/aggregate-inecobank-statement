@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -9,7 +11,8 @@ import (
 )
 
 type Args struct {
-	ConfigPath string `arg:"positional" help:"Path to the configuration YAML file. By default is used 'config.yaml' path."`
+	ConfigPath   string `arg:"positional" help:"Path to the configuration YAML file. By default is used 'config.yaml' path."`
+	DontOpenFile bool   `arg:"-n" help:"Flag to don't open result file in OS at the end, only print in STDOUT."`
 }
 
 type FileParser interface {
@@ -18,6 +21,8 @@ type FileParser interface {
 
 // Version is application version string and should be updated with `go build -ldflags`.
 var Version = "development"
+
+const resultFilePath = "Inecobank Aggregated Statement.txt"
 
 func main() {
 	log.Printf("Version %s", Version)
@@ -81,17 +86,18 @@ func main() {
 	}
 
 	// Process received statistics.
+	result := ""
 	for _, s := range statistics {
 		if config.DetailedOutput {
-			log.Println(s)
+			result = fmt.Sprintf("%s\nTotal %d months.", s.String(), len(statistics))
 			continue
 		}
 
-		// Note that this logic is intentionally separate from `func (s *IntervalStatistic) String()`.
+		// Note that this logic is intentionally separated from `func (s *IntervalStatistic) String()`.
 		income := MapOfGroupsToString(s.Income)
 		expense := MapOfGroupsToString(s.Expense)
-		log.Printf(
-			"\n%s..%s:\n  Income (%d, sum=%s):%s\n  Expenses (%d, sum=%s):%s",
+		result = fmt.Sprintf(
+			"\n%s..%s:\n  Income (%d, sum=%s):%s\n  Expenses (%d, sum=%s):%s\nTotal %d months.",
 			s.Start.Format(OutputDateFormat),
 			s.End.Format(OutputDateFormat),
 			len(income),
@@ -100,9 +106,18 @@ func main() {
 			len(s.Expense),
 			MapOfGroupsSum(s.Expense),
 			strings.Join(expense, ""),
+			len(statistics),
 		)
 	}
-	log.Printf("Total %d months.", len(statistics))
+
+	// Always print result into logs and conditionally into the file which open through the OS.
+	log.Print(result)
+	if !args.DontOpenFile { // Twice no here, but we need in good default value for the flag and too lazy.
+		if err := os.WriteFile(resultFilePath, []byte(result), 0644); err != nil {
+			log.Fatalf("Can't write result file into %s: %#v", resultFilePath, err)
+		}
+		openFileInOS(resultFilePath)
+	}
 }
 
 func parseFiles(glog string, parser FileParser) ([]InecoTransaction, error) {
