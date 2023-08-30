@@ -311,9 +311,10 @@ func BuildMonthlyStatisticFromInecoTransactions(
 		}
 	}
 
-	// Add last MonthStatistics.
-	if statBuilder != nil {
-		stats = append(stats, statBuilder.GetIntervalStatistic())
+	// Add last IntervalStatistic if need.
+	lastStatistic := statBuilder.GetIntervalStatistic()
+	if len(lastStatistic.Expense) > 0 || len(lastStatistic.Income) > 0 {
+		stats = append(stats, lastStatistic)
 	}
 	return stats, nil
 }
