@@ -36,19 +36,20 @@ func main() {
 	}
 	configPath, err := getAbsolutePath(configPath)
 	if err != nil {
-		log.Fatalf("Can't find configuration file '%s': %#v\n", configPath, err)
+		fatalError(fmt.Sprintf("Can't find configuration file '%s': %#v\n", configPath, err), true)
 	}
+	isOpenFileWithResult := !args.DontOpenFile
 
 	// Parse configuration.
 	config, err := readConfig(configPath)
 	if err != nil {
-		log.Fatalf("Configuration file '%s' is wrong: %#v\n", configPath, err)
+		fatalError(fmt.Sprintf("Configuration file '%s' is wrong: %#v\n", configPath, err), isOpenFileWithResult)
 	}
 
 	// Parse timezone or set system.
 	timeZone, err := time.LoadLocation(config.TimeZoneLocation)
 	if err != nil {
-		log.Fatalf("Unknown TimeZoneLocation: %#v.\n", config.TimeZoneLocation)
+		fatalError(fmt.Sprintf("Unknown TimeZoneLocation: %#v.\n", config.TimeZoneLocation), isOpenFileWithResult)
 	}
 
 	// Build groupsExtractor earlier to check for configuration errors.
@@ -58,7 +59,7 @@ func main() {
 		config.IgnoreSubstrings,
 	)
 	if err != nil {
-		log.Fatalln("Can't create statistic builder:", err)
+		fatalError(fmt.Sprintf("Can't create statistic builder: %#v", err), isOpenFileWithResult)
 	}
 
 	// Log settings.
@@ -67,10 +68,11 @@ func main() {
 	// Parse files to raw transactions.
 	rawTransactions, err := parseFiles(config.StatementFilesGlob, XmlParser{})
 	if err != nil {
-		log.Fatalln("Can't parse transactions:", err)
+		fatalError(fmt.Sprintf("Can't parse transactions: %#v", err), isOpenFileWithResult)
 	}
 	if len(rawTransactions) < 1 {
-		log.Fatal("Can't find transactions.")
+		fatalError(fmt.Sprintf("Can't find transactions, check that '%s' matches something",
+			config.StatementFilesGlob), isOpenFileWithResult)
 	}
 	log.Printf("Total found %d transactions.", len(rawTransactions))
 
@@ -82,7 +84,7 @@ func main() {
 		timeZone,
 	)
 	if err != nil {
-		log.Fatalln("Can't build statistic:", err)
+		fatalError(fmt.Sprintf("Can't build statistic: %#v", err), isOpenFileWithResult)
 	}
 
 	// Process received statistics.
@@ -113,10 +115,23 @@ func main() {
 	// Always print result into logs and conditionally into the file which open through the OS.
 	log.Print(result)
 	if !args.DontOpenFile { // Twice no here, but we need in good default value for the flag and too lazy.
-		if err := os.WriteFile(resultFilePath, []byte(result), 0644); err != nil {
-			log.Fatalf("Can't write result file into %s: %#v", resultFilePath, err)
-		}
-		openFileInOS(resultFilePath)
+		writeAndOpenFile(resultFilePath, result)
+	}
+}
+
+func fatalError(err string, inFile bool) {
+	if inFile {
+		writeAndOpenFile(resultFilePath, err)
+	}
+	log.Fatalf(err)
+}
+
+func writeAndOpenFile(resultFilePath, content string) {
+	if err := os.WriteFile(resultFilePath, []byte(content), 0644); err != nil {
+		log.Fatalf("Can't write result file into %s: %#v", resultFilePath, err)
+	}
+	if err := openFileInOS(resultFilePath); err != nil {
+		log.Fatalf("Can't open result file %s: %#v", resultFilePath, err)
 	}
 }
 
