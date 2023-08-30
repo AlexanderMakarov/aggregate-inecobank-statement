@@ -2,5 +2,6 @@
 __debug_bin
 aggregate-inecobank-statement
 tmp**
+demo**
 *.xml
 coverage.out

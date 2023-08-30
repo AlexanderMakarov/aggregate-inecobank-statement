@@ -35,7 +35,7 @@ Example of output (numbers are made up, sum may not match):
    press 'Search', scroll page to bottom and here at right corner will be 5 icons to download statement.
    Press XML button and save near "aggregate-inecobank-statements-\*-\*" file.
 3. Download example of configuration
-   [config.yaml](https://github.com/AlexanderMakarov/aggregate-inecobank-statement/raw/master/config.yaml).
+   [config.yaml](https://raw.githubusercontent.com/AlexanderMakarov/aggregate-inecobank-statement/master/config.yaml).
    Don't need to update it yet, see step 5.
 4. Run binary ("aggregate-inecobank-statements-\*-\*" file).
    It would open text file with the list from a lot of groups where (most probably)
@@ -44,7 +44,7 @@ Example of output (numbers are made up, sum may not match):
 5. Investigate your personal transaction information and update configuration file groups with unique
    for specific transaction substrings to aggregate transaction into these groups.
    See examples in configuration file - you may remove not needed and add your own groups.
-   Be careful about syntax and indentations.
+   Be careful about syntax and indentations, in case of error resulting file would contain error description.
 6. Run binary again, and repeat configuration changes if need.
    When number of transactions in "unknown" group would decrease to small enough number
    set `detailedOutput` to `false` in configuration file to hide detalization by transactions.
