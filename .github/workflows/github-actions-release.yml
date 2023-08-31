@@ -93,7 +93,7 @@ jobs:
         run: |
           GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build \
             -o aggregate-inecobank-statements-${{ matrix.os }}-${{ matrix.arch }} \
-            -ldflags "-X main.Version=$${{ steps.vars.outputs.version }}"
+            -ldflags "-X main.Version=${{ steps.vars.outputs.version }}"
           chmod a+x aggregate-inecobank-statements-*
 
       - name: Save Version and Binaries
