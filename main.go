@@ -91,14 +91,14 @@ func main() {
 	result := ""
 	for _, s := range statistics {
 		if config.DetailedOutput {
-			result = fmt.Sprintf("%s\nTotal %d months.", s.String(), len(statistics))
+			result = result + "\n" + fmt.Sprintf("%s\nTotal %d months.", s.String(), len(statistics))
 			continue
 		}
 
 		// Note that this logic is intentionally separated from `func (s *IntervalStatistic) String()`.
 		income := MapOfGroupsToString(s.Income)
 		expense := MapOfGroupsToString(s.Expense)
-		result = fmt.Sprintf(
+		result = result + "\n" + fmt.Sprintf(
 			"\n%s..%s:\n  Income (%d, sum=%s):%s\n  Expenses (%d, sum=%s):%s\nTotal %d months.",
 			s.Start.Format(OutputDateFormat),
 			s.End.Format(OutputDateFormat),
