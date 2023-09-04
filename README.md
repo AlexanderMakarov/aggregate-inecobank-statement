@@ -1,8 +1,15 @@
-# aggregate-inecobank-statement
-Local tool to aggregates data from Armenian's [Inecobank](https://online.inecobank.am)
-"statements" from multiple accounts monthly, into groups which allows to get insights into your budget.
+# Aggregate Inecobank Statements
+It is local tool to investigate your expenses and incomes by bank transactions.
 
-Example of output (numbers are made up, sum may not match):
+To control your expenses need to know them, right? But it is too boring to note all these details somewhere, each day.
+Fortunately banks do it for us. If you are using back plastic card or NFC application on the smartphone you probably have this listing already.
+
+For example Armenian's [Inecobank](https://online.inecobank.am)
+ provides list of transactions made from card
+ or other accounts as "statements" in downloadable files.
+
+This is a simple tools which allows to aggregate all transactions (hundreeds of them) from multiple accounts into customisable and personalizable groups.
+Resulting small structured piece of text provides valuable insights into your budget. See example (numbers are made up, sum may not match):
 ```
 2023-08-01..2023-08-31:
   Income (2, sum=1,493,878.00):
@@ -23,35 +30,61 @@ Example of output (numbers are made up, sum may not match):
   Income (2, sum=1,516,629.00):
 ...
 ```
+Some banks provides similar dashboards on their websites, but they can't assign good categories suitable for everyone.
+This applicaiton allows to configure it for your personal set of groups and ways to assign transaction to the specific group.
+
+Application is not specific for Inecobank only, it may work (or be easily updated) with any other similar transactions listing.
+To add new bank support please provide file with transactions (in private, because it may contain sensitive information)
+and instruction how to get this file in your bank application.
 
 # How to use
 
 1. Download binary ("aggregate-inecobank-statements-\*-\*" file) for your operating system from
    [Releases](https://github.com/AlexanderMakarov/aggregate-inecobank-statement/releases) page.
+   About what to choose:
+     - For Windows use "aggregate-inecobank-statements-windows-amd64.exe". Even if you have Intel CPU.
+     - For Mac OS X with M1+ CPU/core use "aggregate-inecobank-statements-darwin-arm64".
+       For older Macbooks use "aggregate-inecobank-statements-darwin-amd64".
+     - For Linux-es usually "aggregate-inecobank-statements-windows-amd64".
 2. Download "Statement ....xml" files from https://online.inecobank.am for interesting period and
    put them near the "aggregate-inecobank-statements-\*-\*" file.
-   In details, on [main page](https://online.inecobank.am) click on the chosen account,
+   Namely, on [main page](https://online.inecobank.am) click on the chosen account,
    specify into 'From' and 'To' fields dates you want to analyze,
    press 'Search', scroll page to bottom and here at right corner will be 5 icons to download statement.
-   Press XML button and save near "aggregate-inecobank-statements-\*-\*" file.
-3. Download example of configuration
-   [config.yaml](https://raw.githubusercontent.com/AlexanderMakarov/aggregate-inecobank-statement/master/config.yaml).
+   Press XML button and save file near "aggregate-inecobank-statements-\*-\*" file.
+3. Save [config.yaml](https://raw.githubusercontent.com/AlexanderMakarov/aggregate-inecobank-statement/master/config.yaml) as an example of configuration.
    Don't need to update it yet, see step 5.
-4. Run binary ("aggregate-inecobank-statements-\*-\*" file).
-   It would open text file with the list from a lot of groups where (most probably)
-   a lot of names would be taken from "Details" field of transactions but some of them
-   would be from the example config groups.
+4. Run application ("aggregate-inecobank-statements-\*-\*" file).
+   It would open text file with the list of groups with a lot of transactions it consist of.
+   Most probably it would also have "unknonwn" group with not yet categorized transactions.
 5. Investigate your personal transaction information and update configuration file groups with unique
    for specific transaction substrings to aggregate transaction into these groups.
+   "unknonwn" group is the first item to address. 
    See examples in configuration file - you may remove not needed and add your own groups.
-   Be careful about syntax and indentations, in case of error resulting file would contain error description.
-6. Run binary again, and repeat configuration changes if need.
-   When number of transactions in "unknown" group would decrease to small enough number
-   set `detailedOutput` to `false` in configuration file to hide detalization by transactions.
+   Be careful about syntax and indentations, but in case of any error resulting file would contain error description which may help to understand the reason.
+6. Run application again, and repeat configuration changes if need.
+   Next set `detailedOutput` to `false` in configuration file to hide detalization by transactions.
    If you still want to see all these "unknown" transactions then consider to set
-   `groupAllUnknownTransactions` to `false` - it will cause to put new groups with name equal to "Details" field value.
-7. Run binary again - it should provide clean report for manual investigation, comparing months, etc.
-   On new month it is enough to downloan "Statements" with new transactions and run binary again.
+   `groupAllUnknownTransactions` to `false` - it will group these "I don't know group" transactions into individual groups with name equal to "Details" field value.
+7. Run application one more time to get clean report for manual investigation, comparing months, etc.
+8. Next month it is enough to downloan "Statements" with new transactions and run application again.
+
+Note that it is command line application and may work completely in the terminal.
+Run in it terminal with `-h` for details.
+It would explain hot to work with multiple configuration files and see information directly in terminal.
+
+# Limitations
+
+- Application does not support currencies handling.
+  Therefore if you are handling transactions/statments from multiple accounts then make sure that thay have the same currency.
+- Application does not support way to group/assign transactions in a different way for different accounts. So your configuration
+
+# Contributions
+
+Feel free to contribute your features, fixes and so on.
+
+Also please help to fix Armenian subtitles in the YouTube video - I believe that Google Translator provided
+me with pretty mediocre translation but my Armenian's knowledge is not enough to understand and fix it.
 
 # TODO
 - [x] Add support of statements from different accounts.
