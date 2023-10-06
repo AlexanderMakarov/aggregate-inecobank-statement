@@ -1,15 +1,19 @@
 # Aggregate Inecobank Statements
 It is a local tool to investigate your expenses and incomes by bank transactions.
 
-To control your expenses you need to know them, right? But it is too boring to note all these details somewhere, each day.
-Fortunately banks do it for us. If you are using a bank plastic card or NFC application on the smartphone you probably have this listing already.
+To control your expenses you need to know them, right?
+But it is too boring to note all these details somewhere, each day.
+Fortunately banks do it for us.
+If you are using a bank plastic card or NFC application on the smartphone you probably have this listing already.
 
 For example Armenian's [Inecobank](https://online.inecobank.am)
- provides list of transactions made from card
- or other accounts as "statements" in downloadable files.
+provides list of transactions made from card
+or other accounts as "statements" in downloadable files.
 
-This is a simple tool which allows to aggregate all transactions (hundreds of them) from multiple accounts into customisable and personalizable groups.
-Result is a small structured piece of text provides valuable insights into your budget. See example (numbers are made up, sum may not match):
+This is a simple tool which allows to aggregate all transactions (hundreds of them) from multiple accounts
+into customisable and personalizable groups.
+Result is a small structured piece of text provides valuable insights into your budget.
+See example (numbers are made up, sum may not match):
 ```
 2023-08-01..2023-08-31:
   Income (2, sum=1,493,878.00):
@@ -54,8 +58,8 @@ and instructions on how to get this file in your bank application.
    specify into 'From' and 'To' fields dates you want to analyze,
    press 'Search', scroll page to bottom and here at the right corner will be 5 icons to download statements.
    Press XML button and save file near "aggregate-inecobank-statements-\*-\*" file.
-3. Save [config.yaml](https://raw.githubusercontent.com/AlexanderMakarov/aggregate-inecobank-statement/master/config.yaml) as an example of configuration.
-   Don't need to update it yet, see step 5.
+3. Save [config.yaml](https://raw.githubusercontent.com/AlexanderMakarov/aggregate-inecobank-statement/master/config.yaml)
+   as an example of configuration. Don't need to update it yet, see step 5.
 4. Run application ("aggregate-inecobank-statements-\*-\*" file).
    It would open a text file with the list of groups with a lot of transactions it consists of.
    Most probably it would also have an "unknown" group with not yet categorized transactions.
@@ -63,11 +67,13 @@ and instructions on how to get this file in your bank application.
    for specific transaction substrings to aggregate transactions into these groups.
    "unknown" group is the first item to address.
    See examples in configuration file - you may remove not needed and add your own groups.
-   Be careful about syntax and indentations, but in case of any error the resulting file would contain an error description which may help to understand the reason.
+   Be careful about syntax and indentations, but in case of any error the resulting file would contain
+   an error description which may help to understand the reason.
 6. Run application again, and repeat configuration changes if needed.
    Next set `detailedOutput` to `false` in the configuration file to hide detalization by transactions.
    If you still want to see all these "unknown" transactions then consider to set
-   `groupAllUnknownTransactions` to `false` - it will group these "I don't know group" transactions into individual groups with name equal to "Details" field value.
+   `groupAllUnknownTransactions` to `false` - it will group these "I don't know group" transactions into
+   individual groups with name equal to "Details" field value.
 7. Run application one more time to get a clean report for manual investigation, comparing months, etc.
 8. Next month it is enough to download "Statements" with new transactions and run application again.
 
@@ -89,13 +95,5 @@ Feel free to contribute your features, fixes and so on.
 Also please help to fix Armenian subtitles in the [YouTube video](https://www.youtube.com/embed/4MZN-SK15HE?cc_load_policy=1) - I believe that Google Translator provided
 me with pretty mediocre translation but my Armenian knowledge is not enough to understand and fix it.
 
-# TODO
-- [x] Add support of statements from different accounts.
-- [x] Parse settings from the file.
-- [x] Configure way to skip transactions from other file.
-- [x] Provide good start config.
-- [x] Add CI/CD with builds for Unix/Windows/MacOS.
-- [x] Clean extra tags from the repo.
-- [x] Update README.
-- [x] Create video "How to use".
-- [ ] Respond on feedback/[issues](https://github.com/AlexanderMakarov/aggregate-inecobank-statement/issues).
+# Release
+Merge to "master" and push tag with name "releaseX.X.X".

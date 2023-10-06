@@ -91,7 +91,7 @@ func main() {
 	result := ""
 	for _, s := range statistics {
 		if config.DetailedOutput {
-			result = result + "\n" + fmt.Sprintf("%s\nTotal %d months.", s.String(), len(statistics))
+			result = result + "\n" + s.String()
 			continue
 		}
 
@@ -99,7 +99,7 @@ func main() {
 		income := MapOfGroupsToString(s.Income)
 		expense := MapOfGroupsToString(s.Expense)
 		result = result + "\n" + fmt.Sprintf(
-			"\n%s..%s:\n  Income (%d, sum=%s):%s\n  Expenses (%d, sum=%s):%s\nTotal %d months.",
+			"\n%s..%s:\n  Income (%d, sum=%s):%s\n  Expenses (%d, sum=%s):%s",
 			s.Start.Format(OutputDateFormat),
 			s.End.Format(OutputDateFormat),
 			len(income),
@@ -108,9 +108,9 @@ func main() {
 			len(s.Expense),
 			MapOfGroupsSum(s.Expense),
 			strings.Join(expense, ""),
-			len(statistics),
 		)
 	}
+	result = fmt.Sprintf("%s\nTotal %d months.", result, len(statistics))
 
 	// Always print result into logs and conditionally into the file which open through the OS.
 	log.Print(result)
