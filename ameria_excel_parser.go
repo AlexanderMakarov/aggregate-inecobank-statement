@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xuri/excelize/v2"
+	"github.com/tealeg/xlsx"
 )
 
 func (m *MoneyWith2DecimalPlaces) UnmarshalText(text []byte) error {
@@ -21,6 +21,7 @@ func (m *MoneyWith2DecimalPlaces) UnmarshalText(text []byte) error {
 }
 
 const MyAmeriaDateFormat = "02/01/2006"
+const giveUpFindHeaderAfterEmpty1Cells = 15
 
 var (
 	headers = []string{
@@ -57,71 +58,81 @@ type MyAmeriaExcelFileParser struct {
 	DetailsIncomeSubstrings []string
 }
 
-func (p MyAmeriaExcelFileParser) ParseRawTransactionsFromFile(filePath string) ([]Transaction, error) {
-	f, err := excelize.OpenFile(filePath)
+func (p MyAmeriaExcelFileParser) ParseRawTransactionsFromFile(
+	filePath string,
+) ([]Transaction, error) {
+	f, err := xlsx.OpenFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer f.Close()
 
 	// Find first sheet.
-	firstSheet := f.WorkBook.Sheets.Sheet[0].Name
-	fmt.Printf("%s: '%s' is first sheet of %d sheets.\n", filePath, firstSheet, f.SheetCount)
-
-	rows, err := f.GetRows(firstSheet)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get rows: %w", err)
-	}
+	firstSheet := f.Sheets[0]
+	fmt.Printf("%s: parsing first sheet '%s', total %d sheets.\n",
+		filePath, firstSheet.Name, len(f.Sheets))
 
 	// Parse myAmeriaTransactions.
 	var myAmeriaTransactions []MyAmeriaTransaction
 	var isHeaderRowFound bool
-	for i, row := range rows {
+	for i, row := range firstSheet.Rows {
+		cells := row.Cells
+		if len(cells) < len(headers) {
+			return nil,
+				fmt.Errorf(
+					"%s: %d row has only %d cells while need to find information for headers %v",
+					filePath, i, len(cells), headers,
+				)
+		}
 		// Find header row.
 		if !isHeaderRowFound {
-			if len(row) < len(headers) {
-				continue
+			if i > giveUpFindHeaderAfterEmpty1Cells {
+				return nil, fmt.Errorf(
+					"%s: after scanning %d rows can't find headers %v",
+					filePath, i, headers,
+				)
 			}
-			var isCellMatches = false
-			for cellIndex := range headers {
-				if strings.TrimSpace(row[cellIndex]) != headers[cellIndex] {
+			var isCellMatches = true
+			for cellIndex, header := range headers {
+				if strings.TrimSpace(cells[cellIndex].String()) != header {
 					isCellMatches = false
 					break
 				}
-				isCellMatches = true
 			}
 			if isCellMatches {
 				isHeaderRowFound = true
-				continue
 			}
+
+			// Skip this row anyway.
+			continue
 		}
-		// Stop if row doesn't have enough cells.
-		if len(row) < len(headers) {
+
+		// Stop if row doesn't have enough cells or first cell is empty.
+		if len(cells) < len(headers) || cells[0].String() == "" {
 			break
 		}
 
 		// Parse date and amount.
-		date, err := time.Parse(MyAmeriaDateFormat, row[0])
+		date, err := time.Parse(MyAmeriaDateFormat, cells[0].String())
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse date from 1st cell of %d row: %w", i, err)
 		}
 		var amount MoneyWith2DecimalPlaces
-		if err := amount.UnmarshalText([]byte(row[9])); err != nil {
+		if err := amount.UnmarshalText([]byte(cells[9].String())); err != nil {
 			return nil, fmt.Errorf("failed to parse amount from 10th cell of %d row: %w", i, err)
 		}
 
 		transaction := MyAmeriaTransaction{
 			Date:               date,
-			FactN:              row[1],
-			PO:                 row[2],
-			OutgoingAccount:    row[3],
-			BeneficiaryAccount: row[4],
-			PayerOrBeneficiary: row[5],
-			Details:            row[6],
-			Status:             row[7],
-			Comment:            row[8],
+			FactN:              cells[1].String(),
+			PO:                 cells[2].String(),
+			OutgoingAccount:    cells[3].String(),
+			BeneficiaryAccount: cells[4].String(),
+			PayerOrBeneficiary: cells[5].String(),
+			Details:            cells[6].String(),
+			Status:             cells[7].String(),
+			Comment:            cells[8].String(),
 			Amount:             amount,
-			Currency:           row[10],
+			Currency:           cells[10].String(),
 		}
 		myAmeriaTransactions = append(myAmeriaTransactions, transaction)
 	}
