@@ -95,5 +95,27 @@ Feel free to contribute your features, fixes and so on.
 Also please help to fix Armenian subtitles in the [YouTube video](https://www.youtube.com/embed/4MZN-SK15HE?cc_load_policy=1) - I believe that Google Translator provided
 me with pretty mediocre translation but my Armenian knowledge is not enough to understand and fix it.
 
-# Release
+# Development
+
+## Setup
+
+- Install Go v1.21+
+- `go mod init`
+- Made your changes, test manually with `go run .`
+- After adding tests run them with coverage `go test -coverprofile coverage.out`
+  and see coverage report via `go tool cover -html=coverage.out` - opens page in browser.
+- Make PR.
+
+## Release
 Merge to "master" and push tag with name "releaseX.X.X".
+
+## TODO/Roadmap
+
+- [ ] Rename repo to don't be tied to Inecobank.
+- [ ] Add CI for pull requests.
+- [ ] Convert report to HTML page with go-echarts.
+- [ ] Build translator to https://github.com/beancount/beancount
+- [ ] Parse InecoBank XLS files because which are sent by mails and
+      InecoBank doesn't allow to download data older 2 years.
+- [ ] Add multi-currency support: config for rates
+- [ ] Add multi-currency support: call https://open.er-api.com/v6/latest/AMD

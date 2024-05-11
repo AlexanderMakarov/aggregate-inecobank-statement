@@ -12,11 +12,13 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+const InecoDateFormat = "02/01/2006"
+
 type XmlDate struct {
 	time.Time
 }
 
-type XmlTransaction struct {
+type InecoTransaction struct {
 	NN                   string                  `xml:"n-n"`
 	Number               string                  `xml:"Number"`
 	Date                 XmlDate                 `xml:"Date"`
@@ -29,7 +31,7 @@ type XmlTransaction struct {
 }
 
 type Operations struct {
-	Transactions []XmlTransaction `xml:"Operation"`
+	Transactions []InecoTransaction `xml:"Operation"`
 }
 
 type Statement struct {
@@ -67,11 +69,11 @@ func (xd *XmlDate) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
-type XmlParser struct {
+type InecoXmlParser struct {
 }
 
 // ParseRawTransactionsFromFile implements FileParser.
-func (XmlParser) ParseRawTransactionsFromFile(filePath string) ([]InecoTransaction, error) {
+func (InecoXmlParser) ParseRawTransactionsFromFile(filePath string) ([]Transaction, error) {
 
 	// Open XML file.
 	file, err := os.Open(filePath)
@@ -102,21 +104,22 @@ func (XmlParser) ParseRawTransactionsFromFile(filePath string) ([]InecoTransacti
 		}
 	}
 
-	inecoTransactions := make([]InecoTransaction, 0, len(stmt.Operations.Transactions))
+	// Conver Inecobank rows to unified transactions.
+	transactions := make([]Transaction, 0, len(stmt.Operations.Transactions))
 	for _, t := range stmt.Operations.Transactions {
-		inecoTransactions = append(inecoTransactions, InecoTransaction{
-			Nn:                     t.NN,
-			Number:                 t.Number,
-			Date:                   t.Date.Time,
-			Currency:               t.Currency,
-			Income:                 t.Income,
-			Expense:                t.Expense,
-			RecieverOrPayerAccount: t.ReceiverPayerAccount,
-			RecieverOrPayer:        t.ReceiverPayer,
-			Details:                t.Details,
+		isExpense := t.Income.int <= 0
+		amount := t.Income.int
+		if isExpense {
+			amount = t.Expense.int
+		}
+		transactions = append(transactions, Transaction{
+			IsExpense: isExpense,
+			Date:      t.Date.Time,
+			Details:   t.Details,
+			Amount:    MoneyWith2DecimalPlaces{amount},
 		})
 	}
-	return inecoTransactions, nil
+	return transactions, nil
 }
 
-var _ FileParser = XmlParser{}
+var _ FileParser = InecoXmlParser{}

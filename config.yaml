@@ -1,6 +1,20 @@
-# Write "glob" template to your "Statement" files.
+# Write "glob" template to your Inecobank "Statement" files.
 # Glob supports wildcard "star" (*) which replaces any substring in the path.
-StatementFilesGlob: "Statement*.xml"
+InecobankStatementFilesGlob: "Statement*.xml"
+# Write "glob" template to your MyAmeria "History" files.
+# Glob supports wildcard "star" (*) which replaces any substring in the path.
+MyAmeriaHistoryFilesGlob: "History *.xls"
+# Due to MyAmeria "History" files doesn't provide "is expense or income" information
+# need to specify how to separate transactions. Supported 2 ways:
+# 1. (reliable) specify your account(s) number (16 digits number) and all transactions
+#    with "Beneficiary account" from this list would be treated as an income.
+MyAmeriaMyAccounts:
+# 2. (unreliable) specify substrings to search in "Details" of transactions
+#     and if they found then such transaction would be treated as an income.
+MyAmeriaIncomeSubstrings:
+  - "Transfer to myself"
+  - "Account replenishment"
+  - "Cash deposit"
 # Flag to output all information about the result.
 detailedOutput: true
 # Flag to aggregate all transactions with "Details" not matched with "substrings"

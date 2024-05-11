@@ -7,32 +7,19 @@ type MoneyWith2DecimalPlaces struct {
 	int
 }
 
-const InecoDateFormat = "02/01/2006"
-
-type InecoTransaction struct {
-	Nn                     string
-	Number                 string
-	Date                   time.Time
-	Currency               string
-	Income                 MoneyWith2DecimalPlaces
-	Expense                MoneyWith2DecimalPlaces
-	RecieverOrPayerAccount string
-	RecieverOrPayer        string
-	Details                string
-}
-
 const OutputDateFormat = "2006-01-02"
 
 type Transaction struct {
-	Date    time.Time
-	Details string
-	Amount  MoneyWith2DecimalPlaces
+	IsExpense bool
+	Date      time.Time
+	Details   string
+	Amount    MoneyWith2DecimalPlaces
 }
 
 type Group struct {
 	Name         string
 	Total        MoneyWith2DecimalPlaces
-	Transactions []*Transaction
+	Transactions []Transaction
 }
 
 type IntervalStatistic struct {

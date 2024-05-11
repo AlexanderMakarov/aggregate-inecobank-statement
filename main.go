@@ -16,13 +16,13 @@ type Args struct {
 }
 
 type FileParser interface {
-	ParseRawTransactionsFromFile(filePath string) ([]InecoTransaction, error)
+	ParseRawTransactionsFromFile(filePath string) ([]Transaction, error)
 }
 
 // Version is application version string and should be updated with `go build -ldflags`.
 var Version = "development"
 
-const resultFilePath = "Inecobank Aggregated Statement.txt"
+const resultFilePath = "Bank Aggregated Statement.txt"
 
 func main() {
 	log.Printf("Version %s", Version)
@@ -43,13 +43,19 @@ func main() {
 	// Parse configuration.
 	config, err := readConfig(configPath)
 	if err != nil {
-		fatalError(fmt.Sprintf("Configuration file '%s' is wrong: %#v\n", configPath, err), isOpenFileWithResult)
+		fatalError(
+			fmt.Sprintf("Configuration file '%s' is wrong: %#v\n", configPath, err),
+			isOpenFileWithResult,
+		)
 	}
 
 	// Parse timezone or set system.
 	timeZone, err := time.LoadLocation(config.TimeZoneLocation)
 	if err != nil {
-		fatalError(fmt.Sprintf("Unknown TimeZoneLocation: %#v.\n", config.TimeZoneLocation), isOpenFileWithResult)
+		fatalError(
+			fmt.Sprintf("Unknown TimeZoneLocation: %#v.\n", config.TimeZoneLocation),
+			isOpenFileWithResult,
+		)
 	}
 
 	// Build groupsExtractor earlier to check for configuration errors.
@@ -66,19 +72,33 @@ func main() {
 	log.Printf("Using configuration: %+v", config)
 
 	// Parse files to raw transactions.
-	rawTransactions, err := parseFiles(config.StatementFilesGlob, XmlParser{})
+	inecoTransactions, err := parseTransactionFiles(
+		config.InecobankStatementFilesGlob,
+		InecoXmlParser{},
+	)
 	if err != nil {
-		fatalError(fmt.Sprintf("Can't parse transactions: %#v", err), isOpenFileWithResult)
+		fatalError(fmt.Sprintf("Can't parse Inecobank transactions: %#v", err), isOpenFileWithResult)
 	}
-	if len(rawTransactions) < 1 {
-		fatalError(fmt.Sprintf("Can't find transactions, check that '%s' matches something",
-			config.StatementFilesGlob), isOpenFileWithResult)
+	myAmeriaTransactions, err := parseTransactionFiles(
+		config.MyAmeriaHistoryFilesGlob,
+		MyAmeriaExcelFileParser{
+			MyAccounts:              config.MyAmeriaMyAccounts,
+			DetailsIncomeSubstrings: config.MyAmeriaIncomeSubstrings,
+		},
+	)
+	if err != nil {
+		fatalError(fmt.Sprintf("Can't parse MyAmeria transactions: %#v", err), isOpenFileWithResult)
 	}
-	log.Printf("Total found %d transactions.", len(rawTransactions))
+	transactions := append(inecoTransactions, myAmeriaTransactions...)
+	if len(transactions) < 1 {
+		fatalError(fmt.Sprintf("Can't find transactions, check that '%s' or '%s' matches something",
+			config.InecobankStatementFilesGlob, config.MyAmeriaHistoryFilesGlob), isOpenFileWithResult)
+	}
+	log.Printf("Total found %d transactions.", len(transactions))
 
 	// Build statistic.
-	statistics, err := BuildMonthlyStatisticFromInecoTransactions(
-		rawTransactions,
+	statistics, err := BuildMonthlyStatistic(
+		transactions,
 		groupExtractorFactory,
 		config.MonthStartDayNumber,
 		timeZone,
@@ -135,13 +155,13 @@ func writeAndOpenFile(resultFilePath, content string) {
 	}
 }
 
-func parseFiles(glog string, parser FileParser) ([]InecoTransaction, error) {
+func parseTransactionFiles(glog string, parser FileParser) ([]Transaction, error) {
 	files, err := getFilesByGlob(glog)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]InecoTransaction, 0)
+	result := make([]Transaction, 0)
 	for _, file := range files {
 		log.Printf("Parsing '%s' with %v parser.", file, parser)
 		rawTransactions, err := parser.ParseRawTransactionsFromFile(file)

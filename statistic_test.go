@@ -10,10 +10,6 @@ import (
 func Test_NewGroupExtractorByDetailsSubstrings(t *testing.T) {
 
 	// Cases
-	type args struct {
-		groupNamesToSubstrings        map[string][]string
-		isGroupAllUnknownTransactions bool
-	}
 	tests := []struct {
 		name                          string
 		groupNamesToSubstrings        map[string][]string
@@ -77,34 +73,37 @@ func Test_NewGroupExtractorByDetailsSubstrings(t *testing.T) {
 }
 
 func Test_groupExtractorByDetailsSubstrings_HandleTransaction(t *testing.T) {
-	tI1a := newIT(1, false, "a")
-	tE1b := newIT(1, true, "b")
-	tI2c := newIT(2, false, "c")
-	tI3d := newIT(3, false, "d")
-	tI4c := newIT(4, false, "c")
-	tE2b := newIT(2, true, "b")
-	tE3b := newIT(3, true, "b")
-	tE4c := newIT(4, true, "c")
-	tI5b := newIT(5, false, "b")
-	tI6e := newIT(6, false, "e")
-	tE6e := newIT(6, true, "e")
-	tI7f := newIT(7, false, "f")
-	tE7f := newIT(7, true, "f")
-	transactions1 := []*InecoTransaction{tI1a, tE1b, tI2c, tI3d, tI4c, tE2b, tE3b, tE4c, tI5b, tI6e, tE6e, tI7f, tE7f}
-	// For groups1 with content:
+	tI1a := newT(1, false, "a")
+	tE1b := newT(1, true, "b")
+	tI2c := newT(1, false, "c")
+	tI3d := newT(1, false, "d")
+	tI4c := newT(1, false, "c")
+	tE2b := newT(1, true, "b")
+	tE3b := newT(1, true, "b")
+	tE4c := newT(1, true, "c")
+	tI5b := newT(1, false, "b")
+	tI6e := newT(2, false, "e") // Put here "2" to check something other than 1.
+	tE6e := newT(2, true, "e")
+	tI7f := newT(1, false, "f")
+	tE7f := newT(1, true, "f")
+	transactions1 := []Transaction{tI1a, tE1b, tI2c, tI3d, tI4c, tE2b, tE3b, tE4c, tI5b, tI6e, tE6e, tI7f, tE7f}
+	// For groups1 which is:
 	// "g1": {"a"},
 	// "g2": {"b", "c"},
 	// "g3": {"d"},
 	// we should get:
-	// Income: {g1 1 [tI1a], g2 11 [tI2c,tI4c,tI5b], g3 3 [tI3d], e 6 [tI6e], f 7 [tI7f]}
-	// Expenses: {g1 0 [], g2 10 [tE1b,tE2b,tE3b,tE4c], g3 0 [], e 6 [tE6e], f 7 [tE7f]}
+	// Income: {g1 1 [tI1a], g2 3 [tI2c,tI4c,tI5b], g3 1 [tI3d], e 2 [tI6e], f 1 [tI7f]}
+	// Expenses: {g1 0 [], g2 4 [tE1b,tE2b,tE3b,tE4c], g3 0 [], e 2 [tE6e], f 1 [tE7f]}
 
+	// fields is aggregator of parameters for `groupExtractorByDetailsSubstrings`.
 	type fields struct {
 		intervalStats          *IntervalStatistic
 		groupNamesToSubstrings map[string][]string
 		substringsToGroupName  map[string]string
 		isGroupAllUnknown      bool
 	}
+
+	// newFields is a factory for `fields`.
 	newFields := func(groupNamesToSubstrings map[string][]string, isGroupAllUnknown bool) fields {
 		substringsToGroupName := map[string]string{}
 		for name, substrings := range groupNamesToSubstrings {
@@ -119,91 +118,93 @@ func Test_groupExtractorByDetailsSubstrings_HandleTransaction(t *testing.T) {
 			isGroupAllUnknown,
 		}
 	}
+
 	tests := []struct {
 		name         string
 		fields       fields
-		transactions []*InecoTransaction
+		transactions []Transaction
 		expected     *IntervalStatistic
 	}{
 		{
-			name:         "no_groups_1_unknown",
+			name:         "no_groups-common_unknown",
 			fields:       newFields(map[string][]string{}, true),
 			transactions: transactions1,
 			expected: func() *IntervalStatistic {
 				r := newIntervalStatistic()
-				r.Income = map[string]*Group{
-					UnknownGroupName: groupFromITs(UnknownGroupName,
-						[]*InecoTransaction{tI1a, tI2c, tI3d, tI4c, tI5b, tI6e, tI7f}),
+				r.Income = map[string]*Group{}
+				r.Income[UnknownGroupName] = &Group{
+					Name:         UnknownGroupName,
+					Total:        MoneyWith2DecimalPlaces{8},
+					Transactions: []Transaction{tI1a, tI2c, tI3d, tI4c, tI5b, tI6e, tI7f},
 				}
-				r.Expense = map[string]*Group{
-					UnknownGroupName: groupFromITs(UnknownGroupName,
-						[]*InecoTransaction{tE1b, tE2b, tE3b, tE4c, tE6e, tE7f}),
+				r.Expense = map[string]*Group{}
+				r.Expense[UnknownGroupName] = &Group{
+					Name:         UnknownGroupName,
+					Total:        MoneyWith2DecimalPlaces{7},
+					Transactions: []Transaction{tE1b, tE2b, tE3b, tE4c, tE6e, tE7f},
 				}
 				return r
 			}(),
 		},
 		{
-			name:         "no_groups_all_unknown",
+			name:         "no_groups-personal_unknowns",
 			fields:       newFields(map[string][]string{}, false),
 			transactions: transactions1,
 			expected: func() *IntervalStatistic {
 				r := newIntervalStatistic()
 				r.Income = map[string]*Group{
-					"+1a": groupFromITs("+1a", []*InecoTransaction{tI1a}),
-					"+2c": groupFromITs("+2c", []*InecoTransaction{tI2c}),
-					"+3d": groupFromITs("+3d", []*InecoTransaction{tI3d}),
-					"+4c": groupFromITs("+4c", []*InecoTransaction{tI4c}),
-					"+5b": groupFromITs("+5b", []*InecoTransaction{tI5b}),
-					"+6e": groupFromITs("+6e", []*InecoTransaction{tI6e}),
-					"+7f": groupFromITs("+7f", []*InecoTransaction{tI7f}),
+					"+1a": groupFromITs("+1a", []Transaction{tI1a}),
+					"+1c": groupFromITs("+1c", []Transaction{tI2c, tI4c}),
+					"+1d": groupFromITs("+1d", []Transaction{tI3d}),
+					"+1b": groupFromITs("+1b", []Transaction{tI5b}),
+					"+2e": groupFromITs("+2e", []Transaction{tI6e}),
+					"+1f": groupFromITs("+1f", []Transaction{tI7f}),
 				}
 				r.Expense = map[string]*Group{
-					"-1b": groupFromITs("-1b", []*InecoTransaction{tE1b}),
-					"-2b": groupFromITs("-2b", []*InecoTransaction{tE2b}),
-					"-3b": groupFromITs("-3b", []*InecoTransaction{tE3b}),
-					"-4c": groupFromITs("-4c", []*InecoTransaction{tE4c}),
-					"-6e": groupFromITs("-6e", []*InecoTransaction{tE6e}),
-					"-7f": groupFromITs("-7f", []*InecoTransaction{tE7f}),
+					"-1b": groupFromITs("-1b", []Transaction{tE1b, tE2b, tE3b}),
+					"-1c": groupFromITs("-1c", []Transaction{tE4c}),
+					"-2e": groupFromITs("-2e", []Transaction{tE6e}),
+					"-1f": groupFromITs("-1f", []Transaction{tE7f}),
 				}
 				return r
 			}(),
 		},
 		{
-			name:         "many_groups_1_unknown",
+			name:         "many_groups-common_unknown",
 			fields:       newFields(groups1, true),
 			transactions: transactions1,
 			expected: func() *IntervalStatistic {
 				r := newIntervalStatistic()
 				r.Income = map[string]*Group{
-					"g1":             groupFromITs("g1", []*InecoTransaction{tI1a}),
-					"g2":             groupFromITs("g2", []*InecoTransaction{tI2c, tI4c, tI5b}),
-					"g3":             groupFromITs("g3", []*InecoTransaction{tI3d}),
-					UnknownGroupName: groupFromITs(UnknownGroupName, []*InecoTransaction{tI6e, tI7f}),
+					"g1":             groupFromITs("g1", []Transaction{tI1a}),
+					"g2":             groupFromITs("g2", []Transaction{tI2c, tI4c, tI5b}),
+					"g3":             groupFromITs("g3", []Transaction{tI3d}),
+					UnknownGroupName: groupFromITs(UnknownGroupName, []Transaction{tI6e, tI7f}),
 				}
 				r.Expense = map[string]*Group{
-					"g2":             groupFromITs("g2", []*InecoTransaction{tE1b, tE2b, tE3b, tE4c}),
-					UnknownGroupName: groupFromITs(UnknownGroupName, []*InecoTransaction{tE6e, tE7f}),
+					"g2":             groupFromITs("g2", []Transaction{tE1b, tE2b, tE3b, tE4c}),
+					UnknownGroupName: groupFromITs(UnknownGroupName, []Transaction{tE6e, tE7f}),
 				}
 				return r
 			}(),
 		},
 		{
-			name:         "many_groups_all_unknown",
+			name:         "many_groups-personal_unknowns",
 			fields:       newFields(groups1, false),
 			transactions: transactions1,
 			expected: func() *IntervalStatistic {
 				r := newIntervalStatistic()
 				r.Income = map[string]*Group{
-					"g1":  groupFromITs("g1", []*InecoTransaction{tI1a}),
-					"g2":  groupFromITs("g2", []*InecoTransaction{tI2c, tI4c, tI5b}),
-					"g3":  groupFromITs("g3", []*InecoTransaction{tI3d}),
-					"+6e": groupFromITs("+6e", []*InecoTransaction{tI6e}),
-					"+7f": groupFromITs("+7f", []*InecoTransaction{tI7f}),
+					"g1":  groupFromITs("g1", []Transaction{tI1a}),
+					"g2":  groupFromITs("g2", []Transaction{tI2c, tI4c, tI5b}),
+					"g3":  groupFromITs("g3", []Transaction{tI3d}),
+					"+2e": groupFromITs("+2e", []Transaction{tI6e}),
+					"+1f": groupFromITs("+1f", []Transaction{tI7f}),
 				}
 				r.Expense = map[string]*Group{
-					"g2":  groupFromITs("g2", []*InecoTransaction{tE1b, tE2b, tE3b, tE4c}),
-					"-6e": groupFromITs("-6e", []*InecoTransaction{tE6e}),
-					"-7f": groupFromITs("-7f", []*InecoTransaction{tE7f}),
+					"g2":  groupFromITs("g2", []Transaction{tE1b, tE2b, tE3b, tE4c}),
+					"-2e": groupFromITs("-2e", []Transaction{tE6e}),
+					"-1f": groupFromITs("-1f", []Transaction{tE7f}),
 				}
 				return r
 			}(),
@@ -223,7 +224,7 @@ func Test_groupExtractorByDetailsSubstrings_HandleTransaction(t *testing.T) {
 			// Act
 			for _, trans := range tt.transactions {
 				if err := handler.HandleTransaction(trans); err != nil {
-					t.Errorf("groupExtractorByDetailsSubstrings.HandleTransaction() failed on %s with %#v", trans, err)
+					t.Errorf("groupExtractorByDetailsSubstrings.HandleTransaction() failed on %v with %#v", trans, err)
 				}
 			}
 
@@ -303,7 +304,7 @@ func equalGroup(a, b *Group) bool {
 	return true
 }
 
-func equalTransaction(a, b *Transaction) bool {
+func equalTransaction(a, b Transaction) bool {
 	return a.Date == b.Date &&
 		a.Details == b.Details &&
 		a.Amount.int == b.Amount.int
@@ -328,52 +329,27 @@ func newIntervalStatistic() *IntervalStatistic {
 	}
 }
 
-func newIT(id int, isExpense bool, details string) *InecoTransaction {
-	var sign, name string
-	var income, expense MoneyWith2DecimalPlaces
+func newT(id int, isExpense bool, details string) Transaction {
+	sign := "+"
 	if isExpense {
 		sign = "-"
-		name = fmt.Sprintf("Expense %d", id)
-		income = MoneyWith2DecimalPlaces{0}
-		expense = MoneyWith2DecimalPlaces{id}
-	} else {
-		sign = "+"
-		name = fmt.Sprintf("Income %d", id)
-		income = MoneyWith2DecimalPlaces{id}
-		expense = MoneyWith2DecimalPlaces{0}
 	}
-	return &InecoTransaction{
-		Nn:                     name,
-		Number:                 name,
-		Date:                   now,
-		Currency:               "C",
-		Income:                 income,
-		Expense:                expense,
-		RecieverOrPayerAccount: name,
-		RecieverOrPayer:        name,
-		Details:                fmt.Sprintf("%s%d%s", sign, id, details),
+	return Transaction{
+		IsExpense: isExpense,
+		Date:      now,
+		Details:   fmt.Sprintf("%s%d%s", sign, id, details),
+		Amount:    MoneyWith2DecimalPlaces{id},
 	}
 }
 
-func groupEmpty(gn string) *Group {
-	return &Group{
-		Name:         gn,
-		Total:        MoneyWith2DecimalPlaces{},
-		Transactions: []*Transaction{},
-	}
-}
-
-func groupFromITs(name string, its []*InecoTransaction) *Group {
+func groupFromITs(name string, its []Transaction) *Group {
 	sum := 0
-	transactions := make([]*Transaction, len(its))
-	for i, t := range its {
-		trans, _ := t.toTransaction()
+	for _, trans := range its {
 		sum += trans.Amount.int
-		transactions[i] = &trans
 	}
 	return &Group{
 		Name:         name,
 		Total:        MoneyWith2DecimalPlaces{sum},
-		Transactions: transactions,
+		Transactions: its,
 	}
 }

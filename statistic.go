@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -11,20 +10,20 @@ import (
 	"log"
 )
 
-func (t *InecoTransaction) toTransaction() (trans Transaction, isExpense bool) {
-	amount := t.Expense
-	isExpense = true
-	if amount.int == 0 {
-		amount = t.Income
-		isExpense = false
-	}
-	trans = Transaction{
-		Date:    t.Date,
-		Details: t.Details,
-		Amount:  amount,
-	}
-	return
-}
+// func (t *InecoTransaction) toTransaction() (trans Transaction, isExpense bool) {
+// 	amount := t.Expense
+// 	isExpense = true
+// 	if amount.int == 0 {
+// 		amount = t.Income
+// 		isExpense = false
+// 	}
+// 	trans = Transaction{
+// 		Date:    t.Date,
+// 		Details: t.Details,
+// 		Amount:  amount,
+// 	}
+// 	return
+// }
 
 func (t *Transaction) String() string {
 	return fmt.Sprintf("Transaction %s %s %s", t.Date.Format(OutputDateFormat), t.Amount, t.Details)
@@ -55,18 +54,18 @@ func (g GroupList) Swap(i, j int) {
 	g[i], g[j] = g[j], g[i]
 }
 
-// InecoTransactionList structure to sort transaction by `Date` ascending.
-type InecoTransactionList []InecoTransaction
+// TransactionList structure to sort transaction by `Date` ascending.
+type TransactionList []Transaction
 
-func (g InecoTransactionList) Len() int {
+func (g TransactionList) Len() int {
 	return len(g)
 }
 
-func (g InecoTransactionList) Less(i, j int) bool {
+func (g TransactionList) Less(i, j int) bool {
 	return g[i].Date.Before(g[j].Date)
 }
 
-func (g InecoTransactionList) Swap(i, j int) {
+func (g TransactionList) Swap(i, j int) {
 	g[i], g[j] = g[j], g[i]
 }
 
@@ -83,7 +82,6 @@ func MapOfGroupsToStringFull(mapOfGroups map[string]*Group, withTransactions boo
 
 	groupStrings := make([]string, len(mapOfGroups))
 	for i, group := range groupList {
-		groupStrings[i] = fmt.Sprintf("\n    %-35s: %s", group.Name, &group.Total)
 		if withTransactions {
 			transStrings := make([]string, 0, len(group.Transactions))
 			for _, t := range group.Transactions {
@@ -91,6 +89,8 @@ func MapOfGroupsToStringFull(mapOfGroups map[string]*Group, withTransactions boo
 			}
 			groupStrings[i] = fmt.Sprintf("%s, from %d transaction(s):\n      %s", groupStrings[i],
 				len(transStrings), strings.Join(transStrings, "\n      "))
+		} else {
+			groupStrings[i] = fmt.Sprintf("\n    %-35s: %s", group.Name, group.Total)
 		}
 	}
 	return groupStrings
@@ -125,12 +125,12 @@ func MapOfGroupsSum(mapOfGroups map[string]*Group) MoneyWith2DecimalPlaces {
 	return sum
 }
 
-// IntervalStatisticsBuilder builds `IntervalStatistic` from `InecoTransaction-s`.
+// IntervalStatisticsBuilder builds `IntervalStatistic` from `Transaction-s`.
 type IntervalStatisticsBuilder interface {
 
 	// HandleTransaction updates inner `MonthStatistics` object with transaction details.
 	// The main purpose is to choose right `Group` instance to add data into.
-	HandleTransaction(trans *InecoTransaction) error
+	HandleTransaction(trans Transaction) error
 
 	// GetIntervalStatistic returns `IntervalStatistic` assembled so far.
 	GetIntervalStatistic() *IntervalStatistic
@@ -139,11 +139,11 @@ type IntervalStatisticsBuilder interface {
 const UnknownGroupName = "unknown"
 
 // groupExtractorByDetailsSubstrings is [main.IntervalStatisticsBuilder] which uses
-// `InecoTransaction.Details` field to choose right group. Logic is following:
+// `Transaction.Details` field to choose right group. Logic is following:
 //  1. Find is group for expenses of incomes.
 //  2. Search group in `substringsToGroupName` field. If there are such then update it.
 //  3. Otherwise check isGroupAllUnknown value:
-//  4. If `false` then create new group with name equal to `InecoTransaction.Details` field
+//  4. If `false` then create new group with name equal to `Transaction.Details` field
 //  5. If `true` then add into single group with name from `UnknownGroupName` constant.
 type groupExtractorByDetailsSubstrings struct {
 	intervalStats          *IntervalStatistic
@@ -153,12 +153,11 @@ type groupExtractorByDetailsSubstrings struct {
 	ignoreSubstrings       []string
 }
 
-func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans *InecoTransaction) error {
-	statTransaction, isExpense := trans.toTransaction()
+func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans Transaction) error {
 
 	// Choose map of groups to operate on.
 	var mapOfGroups map[string]*Group
-	if isExpense {
+	if trans.IsExpense {
 		mapOfGroups = s.intervalStats.Expense
 	} else {
 		mapOfGroups = s.intervalStats.Income
@@ -171,31 +170,30 @@ func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans *InecoTransac
 		}
 	}
 
-	// Try to find group in configuration.
+	// Try to find user-defined group in configuration and add transaction to it.
 	found := false
 	for substring, groupName := range s.substringsToGroupName {
 		if strings.Contains(trans.Details, substring) {
-			// Refresh group from the map! Because golang makes copy of `group` which leads to flacky behavior.
-			existingGroup, exists := mapOfGroups[groupName]
+			group, exists := mapOfGroups[groupName]
 			if !exists {
 				// If the group doesn't exist in the map, create a new one.
-				existingGroup = &Group{
+				group = &Group{
 					Name:         groupName,
 					Total:        MoneyWith2DecimalPlaces{},
-					Transactions: []*Transaction{},
+					Transactions: []Transaction{},
 				}
-				mapOfGroups[groupName] = existingGroup
+				mapOfGroups[groupName] = group
 			}
-			existingGroup.Transactions = append(existingGroup.Transactions, &statTransaction)
-			existingGroup.Total.int += statTransaction.Amount.int
+			group.Transactions = append(group.Transactions, trans)
+			group.Total.int += trans.Amount.int
 			found = true
 			break
 		}
 	}
 
-	// Check group is found in configuration.
+	// Otherwise add transaction to either "unknown" or personal group.
 	if !found {
-		// Choose name of custom group to search.
+		// Choose name of group to add transaction into.
 		var groupName string
 		if s.isGroupAllUnknown {
 			groupName = UnknownGroupName
@@ -203,16 +201,15 @@ func (s groupExtractorByDetailsSubstrings) HandleTransaction(trans *InecoTransac
 			groupName = trans.Details
 		}
 
+		// Check group exists or create a new one. Add transaction to group.
 		if group, exists := mapOfGroups[groupName]; exists {
-			// If exists then update group with current transaction.
-			group.Total.int += statTransaction.Amount.int
-			group.Transactions = append(group.Transactions, &statTransaction)
+			group.Total.int += trans.Amount.int
+			group.Transactions = append(group.Transactions, trans)
 		} else {
-			// If not exists, create new and add to group.
 			newGroup := Group{
 				Name:         groupName,
-				Total:        statTransaction.Amount,
-				Transactions: []*Transaction{&statTransaction},
+				Total:        trans.Amount,
+				Transactions: []Transaction{trans},
 			}
 			mapOfGroups[newGroup.Name] = &newGroup
 		}
@@ -241,8 +238,8 @@ func NewStatisticBuilderByDetailsSubstrings(
 	for name, substrings := range groupNamesToSubstrings {
 		for _, substring := range substrings {
 			if group, exist := substringsToGroupName[substring]; exist {
-				return nil, errors.New(fmt.Sprintf("'%s' is duplicated in '%s' and in previous '%s'",
-					substring, name, group))
+				return nil, fmt.Errorf("'%s' is duplicated in '%s' and in previous '%s'",
+					substring, name, group)
 			}
 			substringsToGroupName[substring] = name
 		}
@@ -268,18 +265,18 @@ func NewStatisticBuilderByDetailsSubstrings(
 	}, nil
 }
 
-// BuildMonthlyStatisticFromInecoTransactions builds list of
+// BuildMonthlyStatistic builds list of
 // [github.com/AlexanderMakarov/aggregate-inecobank-statement.main.IntervalStatistic]
 // per each month from provided transactions.
-func BuildMonthlyStatisticFromInecoTransactions(
-	transactions []InecoTransaction,
+func BuildMonthlyStatistic(
+	transactions []Transaction,
 	statisticBuilderFactory StatisticBuilderFactory,
 	monthStart uint,
 	timeLocation *time.Location,
 ) ([]*IntervalStatistic, error) {
 
 	// Sort transactions.
-	sort.Sort(InecoTransactionList(transactions))
+	sort.Sort(TransactionList(transactions))
 
 	var stats []*IntervalStatistic
 	var statBuilder IntervalStatisticsBuilder
@@ -306,7 +303,7 @@ func BuildMonthlyStatisticFromInecoTransactions(
 		}
 
 		// Handle transaction.
-		if err := statBuilder.HandleTransaction(&trans); err != nil {
+		if err := statBuilder.HandleTransaction(trans); err != nil {
 			return nil, err
 		}
 	}

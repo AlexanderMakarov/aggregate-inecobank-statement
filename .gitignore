@@ -1,8 +1,14 @@
+# Development/OS artifacts and local settings
 .vscode**
 __debug_bin
-aggregate-inecobank-statement
+aggregate-inecobank-statement*
+coverage.out
+**.~lock.*
+Inecobank Aggregated Statement.txt
+Bank Aggregated Statement.txt
+
+# Local data
 tmp**
 demo**
 *.xml
-coverage.out
-Inecobank Aggregated Statement.txt
+History *.xls

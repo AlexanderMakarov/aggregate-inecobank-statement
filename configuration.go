@@ -9,7 +9,10 @@ import (
 )
 
 type Config struct {
-	StatementFilesGlob          string              `yaml:"StatementFilesGlob" validate:"required,filepath"`
+	InecobankStatementFilesGlob string              `yaml:"InecobankStatementFilesGlob" validate:"required,filepath"`
+	MyAmeriaHistoryFilesGlob    string              `yaml:"MyAmeriaHistoryFilesGlob" validate:"required,filepath"`
+	MyAmeriaMyAccounts          []string            `yaml:"MyAmeriaMyAccounts"`
+	MyAmeriaIncomeSubstrings    []string            `yaml:"MyAmeriaIncomeSubstrings"`
 	DetailedOutput              bool                `yaml:"detailedOutput"`
 	MonthStartDayNumber         uint                `yaml:"monthStartDayNumber" validate:"min=1,max=31"`
 	TimeZoneLocation            string              `yaml:"TimeZoneLocation" validate:"timezone"`
