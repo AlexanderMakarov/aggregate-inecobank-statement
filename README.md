@@ -111,11 +111,17 @@ Merge to "master" and push tag with name "releaseX.X.X".
 
 ## TODO/Roadmap
 
+- [x] Fail if wrong field in config found.
+- [ ] Add CI for pull requests (different branches).
 - [ ] Rename repo to don't be tied to Inecobank.
-- [ ] Add CI for pull requests.
-- [ ] Convert report to HTML page with go-echarts.
-- [ ] Build translator to https://github.com/beancount/beancount
+- [ ] Write instruction about MyAmeria. Record new video.
+- [ ] (?) Support different fields with parsing.
+- [ ] (?) More tests coverage.
 - [ ] Parse InecoBank XLS files because which are sent by mails and
       InecoBank doesn't allow to download data older 2 years.
+- [ ] (?) Build translator to https://github.com/beancount/beancount
+      Check in https://fava.pythonanywhere.com/example-beancount-file/editor/#
+- [ ] Build UI with Fyne and https://github.com/wcharczuk/go-chart
+      (https://github.com/Jacalz/sparta/commit/f9927d8b502e388bda1ab21b3028693b939e9eb2).
 - [ ] Add multi-currency support: config for rates
 - [ ] Add multi-currency support: call https://open.er-api.com/v6/latest/AMD

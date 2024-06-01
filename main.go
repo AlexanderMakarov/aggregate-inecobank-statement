@@ -25,7 +25,7 @@ var Version = "development"
 const resultFilePath = "Bank Aggregated Statement.txt"
 
 func main() {
-	log.Printf("Version %s", Version)
+	log.Printf("Version: %s", Version)
 	configPath := "config.yaml"
 
 	// Parse arguments and set configPath.
@@ -44,7 +44,7 @@ func main() {
 	config, err := readConfig(configPath)
 	if err != nil {
 		fatalError(
-			fmt.Sprintf("Configuration file '%s' is wrong: %#v\n", configPath, err),
+			fmt.Sprintf("Configuration file '%s' is wrong: %+v\n", configPath, err),
 			isOpenFileWithResult,
 		)
 	}
