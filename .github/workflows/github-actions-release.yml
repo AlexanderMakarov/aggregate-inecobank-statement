@@ -1,7 +1,8 @@
 name: build-release-binaries
 run-name: CI/CD
 
-on: 
+on:
+  pull_request:
   push:
     branches:
     - master
