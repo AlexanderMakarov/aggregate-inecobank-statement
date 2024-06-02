@@ -13,7 +13,8 @@ func TestReadConfig_ValidYAML(t *testing.T) {
 	// Arrange
 	tempFile := createTempFileWithContent(
 		`inecobankStatementFilesGlob: "*.xml"
-myAmeriaHistoryFilesGlob: "*.csv"
+ameriaCsvFilesGlob: "*.csv"
+myAmeriaHistoryFilesGlob: "*.xls"
 myAmeriaMyAccounts: 
   - Account1
   - Account2
@@ -53,9 +54,15 @@ ignoreSubstrings:
 			cfg.InecobankStatementFilesGlob,
 		)
 	}
-	if cfg.MyAmeriaHistoryFilesGlob != "*.csv" {
+	if cfg.AmeriaCsvFilesGlob != "*.csv" {
 		t.Errorf(
-			"Expected MyAmeriaHistoryFilesGlob to be '*.csv', got '%s'",
+			"Expected AmeriaCsvFilesGlob to be '*.csv', got '%s'",
+			cfg.InecobankStatementFilesGlob,
+		)
+	}
+	if cfg.MyAmeriaHistoryFilesGlob != "*.xls" {
+		t.Errorf(
+			"Expected MyAmeriaHistoryFilesGlob to be '*.xls', got '%s'",
 			cfg.MyAmeriaHistoryFilesGlob,
 		)
 	}
@@ -101,6 +108,7 @@ func TestReadConfig_InvalidYAML(t *testing.T) {
 	// Arrange. Note that "myAmeriaIncomeSubstrings" doesn't have ":" at the end.
 	tempFile := createTempFileWithContent(
 		`inecobankStatementFilesGlob: "*.xml"
+ameriaCsvFilesGlob: "*.csv"
 myAmeriaHistoryFilesGlob: "*.csv"
 myAmeriaMyAccounts: 
   - Account1
@@ -132,13 +140,14 @@ ignoreSubstrings:
 	if err == nil {
 		t.Fatal("Expected error, but got no error")
 	}
-	checkErrorContainsSubstring(t, err, "yaml: line 6: could not find expected ':'")
+	checkErrorContainsSubstring(t, err, "yaml: line 7: could not find expected ':'")
 }
 
 func TestReadConfig_MisstypedField(t *testing.T) {
 	// Arrange. Note that "groupsNamesToSubstrings" is a wrong name.
 	tempFile := createTempFileWithContent(
 		`inecobankStatementFilesGlob: "*.xml"
+ameriaCsvFilesGlob: "*.csv"
 myAmeriaHistoryFilesGlob: "*.csv"
 myAmeriaMyAccounts: 
   - Account1
@@ -170,7 +179,7 @@ ignoreSubstrings:
 	if err == nil {
 		t.Fatal("Expected error, but got no error")
 	}
-	checkErrorContainsSubstring(t, err, "line 13: field groupsNamesToSubstrings not found in type")
+	checkErrorContainsSubstring(t, err, "line 14: field groupsNamesToSubstrings not found in type")
 }
 
 func TestReadConfig_FileNotFound(t *testing.T) {
@@ -206,7 +215,8 @@ func TestReadConfig_NotAllFields(t *testing.T) {
 	// Arrange
 	tempFile := createTempFileWithContent(
 		`inecobankStatementFilesGlob: "*.xml"
-myAmeriaHistoryFilesGlob: "*.csv"
+ameriaCsvFilesGlob: "*.csv"
+myAmeriaHistoryFilesGlob: "*.xls"
 detailedOutput: false
 groupAllUnknownTransactions: true
 groupNamesToSubstrings:
@@ -235,9 +245,15 @@ groupNamesToSubstrings:
 			cfg.InecobankStatementFilesGlob,
 		)
 	}
-	if cfg.MyAmeriaHistoryFilesGlob != "*.csv" {
+	if cfg.AmeriaCsvFilesGlob != "*.csv" {
 		t.Errorf(
-			"Expected MyAmeriaHistoryFilesGlob to be '*.csv', got '%s'",
+			"Expected AmeriaCsvFilesGlob to be '*.csv', got '%s'",
+			cfg.InecobankStatementFilesGlob,
+		)
+	}
+	if cfg.MyAmeriaHistoryFilesGlob != "*.xls" {
+		t.Errorf(
+			"Expected MyAmeriaHistoryFilesGlob to be '*.xls', got '%s'",
 			cfg.MyAmeriaHistoryFilesGlob,
 		)
 	}
