@@ -1,6 +1,12 @@
 # Aggregate Inecobank Statements
 It is a local tool to investigate your expenses and incomes by bank transactions.
 
+## FYI
+
+Will rename repo soon because it is no more "Inecobank" only application and therefore requires "rebranding".
+
+----
+
 To control your expenses you need to know them, right?
 But it is too boring to note all these details somewhere, each day.
 Fortunately banks do it for us.
@@ -92,8 +98,10 @@ It would explain how to work with multiple configuration files and see informati
 
 Feel free to contribute your features, fixes and so on.
 
+It is usual Go repo with some useful shortcuts in [Makefile](/Makefile).
+
 Also please help to fix Armenian subtitles in the [YouTube video](https://www.youtube.com/embed/4MZN-SK15HE?cc_load_policy=1) - I believe that Google Translator provided
-me with pretty mediocre translation but my Armenian knowledge is not enough to understand and fix it.
+me with pretty mediocre translation but my Armenian knowledge is not enough to make subtitles better.
 
 # Development
 
@@ -101,28 +109,27 @@ me with pretty mediocre translation but my Armenian knowledge is not enough to u
 
 - Install Go v1.21+
 - `go mod init`
-- Made your changes, test manually with `go run .`
-- After adding tests run them with coverage `go test -coverprofile coverage.out`
-  and see coverage report via `go tool cover -html=coverage.out` - opens page in browser.
+- Made your changes, run test via [Makefile](/Makefile) targets and test manually with `go run .`
 - Make PR.
 
 ## Release
-Merge to "master" and push tag with name "releaseX.X.X".
+Merge to "master" and push tag with name "releaseX.X.X". CI will do the rest.
 
 ## TODO/Roadmap
 
 - [x] Fail if wrong field in config found.
 - [x] Add CI for pull requests (different branches).
 - [x] Parse CSV-s from online.ameriabank.am.
+- [x] Propagate not fatal errors from parsing files into report.
 - [ ] Parse InecoBank XLS files which are sent in emails and
       InecoBank doesn't allow to download data older than 2 years.
 - [ ] Rename repo to don't be tied to Inecobank.
-- [ ] Write instruction about MyAmeria. Record new video.
-- [ ] (?) Support different fields with parsing.
+- [ ] Write instruction about both options for Ameriabank transactions. Record new video(s).
+- [ ] (?) Support different schema with parsing. Aka "parse anything".
 - [ ] (?) More tests coverage.
 - [ ] (?) Build translator to https://github.com/beancount/beancount
       Check in https://fava.pythonanywhere.com/example-beancount-file/editor/#
 - [ ] Build UI with Fyne and https://github.com/wcharczuk/go-chart
       (https://github.com/Jacalz/sparta/commit/f9927d8b502e388bda1ab21b3028693b939e9eb2).
-- [ ] Add multi-currency support: config for rates
+- [ ] Add multi-currency support: config for rates. Also see how Beancount handles it.
 - [ ] Add multi-currency support: call https://open.er-api.com/v6/latest/AMD

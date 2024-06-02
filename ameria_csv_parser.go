@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -34,7 +36,7 @@ type AmeriaBusinessTransaction struct {
 	Details             string
 }
 
-type AmeriaCsvFileParser struct {}
+type AmeriaCsvFileParser struct{}
 
 func (p AmeriaCsvFileParser) ParseRawTransactionsFromFile(
 	filePath string,
@@ -45,8 +47,21 @@ func (p AmeriaCsvFileParser) ParseRawTransactionsFromFile(
 	}
 	defer file.Close()
 
-	reader := csv.NewReader(file)
-	reader.Comma = '\t' // Assuming the CSV is tab-delimited
+	// Read the file into a byte slice
+	fileData, err := io.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+
+	// Convert UTF-16 to UTF-8
+	utf8Data, err := decodeUTF16ToUTF8(fileData)
+	if err != nil {
+		panic(err)
+	}
+
+	reader := csv.NewReader(bytes.NewReader(utf8Data))
+	reader.Comma = '\t'      // Assuming the CSV is tab-delimited
+	reader.LazyQuotes = true // Allow the reader to handle bare quotes
 
 	// Read the header row
 	header, err := reader.Read()
@@ -54,9 +69,14 @@ func (p AmeriaCsvFileParser) ParseRawTransactionsFromFile(
 		return nil, fmt.Errorf("failed to read header: %w", err)
 	}
 
+	// Strip BOM from the first header field if present
+	if len(header) > 0 && strings.HasPrefix(header[0], "\ufeff") {
+		header[0] = strings.TrimPrefix(header[0], "\ufeff")
+	}
+
 	// Validate header
 	for i, h := range csvHeaders {
-		if strings.TrimSpace(header[i]) != h {
+		if strings.TrimSpace(strings.Trim(header[i], `"`)) != h {
 			return nil, fmt.Errorf("unexpected header: got %s, want %s", header[i], h)
 		}
 	}
@@ -67,6 +87,11 @@ func (p AmeriaCsvFileParser) ParseRawTransactionsFromFile(
 		record, err := reader.Read()
 		if err != nil {
 			break
+		}
+
+		// Strip quotes from each field
+		for i := range record {
+			record[i] = strings.Trim(record[i], `"`)
 		}
 
 		// Parse date

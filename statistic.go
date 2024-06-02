@@ -80,17 +80,30 @@ func MapOfGroupsToStringFull(mapOfGroups map[string]*Group, withTransactions boo
 	// Sort the slice by TotalAmount2DigitAfterDot.
 	sort.Sort(groupList)
 
-	groupStrings := make([]string, len(mapOfGroups))
-	for i, group := range groupList {
+	groupStrings := []string{}
+	for _, group := range groupList {
 		if withTransactions {
-			transStrings := make([]string, 0, len(group.Transactions))
-			for _, t := range group.Transactions {
-				transStrings = append(transStrings, t.String())
+			transStrings := make([]string, len(group.Transactions))
+			for j, t := range group.Transactions {
+				transStrings[j] = t.String()
 			}
-			groupStrings[i] = fmt.Sprintf("%s, from %d transaction(s):\n      %s", groupStrings[i],
-				len(transStrings), strings.Join(transStrings, "\n      "))
+			groupStrings = append(groupStrings,
+				fmt.Sprintf(
+					"\n    %-35s: %s, from %d transaction(s):\n      %s",
+					group.Name,
+					group.Total,
+					len(transStrings),
+					strings.Join(transStrings, "\n      "),
+				),
+			)
 		} else {
-			groupStrings[i] = fmt.Sprintf("\n    %-35s: %s", group.Name, group.Total)
+			groupStrings = append(groupStrings,
+				fmt.Sprintf(
+					"\n    %-35s: %s",
+					group.Name,
+					group.Total,
+				),
+			)
 		}
 	}
 	return groupStrings

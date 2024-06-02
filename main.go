@@ -72,14 +72,18 @@ func main() {
 	log.Printf("Using configuration: %+v", config)
 
 	// Parse files to raw transactions.
-	transactions, err := parseTransactionFiles(
+	parsingWarnings := []string{}
+	transactions, warning, err := parseTransactionFiles(
 		config.InecobankStatementFilesGlob,
 		InecoXmlParser{},
 	)
 	if err != nil {
 		fatalError(fmt.Sprintf("Can't parse Inecobank statements: %#v", err), isOpenFileWithResult)
 	}
-	myAmeriaTransactions, err := parseTransactionFiles(
+	if warning!= "" {
+		parsingWarnings = append(parsingWarnings, "Inecobank statements parsing warning: " + warning)
+    }
+	myAmeriaTransactions, warning, err := parseTransactionFiles(
 		config.MyAmeriaHistoryFilesGlob,
 		MyAmeriaExcelFileParser{
 			MyAccounts:              config.MyAmeriaMyAccounts,
@@ -89,14 +93,20 @@ func main() {
 	if err != nil {
 		fatalError(fmt.Sprintf("Can't parse MyAmeria History: %#v", err), isOpenFileWithResult)
 	}
+	if warning!= "" {
+		parsingWarnings = append(parsingWarnings, "MyAmeria History parsing warning: " + warning)
+    }
 	transactions = append(transactions, myAmeriaTransactions...)
-	ameriaCsvTransactions, err := parseTransactionFiles(
+	ameriaCsvTransactions, warning, err := parseTransactionFiles(
 		config.AmeriaCsvFilesGlob,
 		AmeriaCsvFileParser{},
 	)
 	if err != nil {
-		fatalError(fmt.Sprintf("Can't parse Ameria Business (from CSV) transactions: %#v", err), isOpenFileWithResult)
+		fatalError(fmt.Sprintf("Can't parse Ameria in-CSV transactions: %#v", err), isOpenFileWithResult)
 	}
+	if warning!= "" {
+		parsingWarnings = append(parsingWarnings, "Ameria in-CSV transactions parsing warning: " + warning)
+    }
 	transactions = append(transactions, ameriaCsvTransactions...)
 	if len(transactions) < 1 {
 		fatalError(fmt.Sprintf("Can't find transactions, check that '%s' or '%s' matches something",
@@ -116,7 +126,7 @@ func main() {
 	}
 
 	// Process received statistics.
-	result := ""
+	result := strings.Join(parsingWarnings, "\n")
 	for _, s := range statistics {
 		if config.DetailedOutput {
 			result = result + "\n" + s.String()
@@ -163,24 +173,29 @@ func writeAndOpenFile(resultFilePath, content string) {
 	}
 }
 
-func parseTransactionFiles(glog string, parser FileParser) ([]Transaction, error) {
+// parseTransactionFiles parses transactions from files by glob pattern.
+// Returns list of transactions, not fatal error message and error if it is fatal.
+func parseTransactionFiles(glog string, parser FileParser) ([]Transaction, string, error) {
 	files, err := getFilesByGlob(glog)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	result := make([]Transaction, 0)
+	notFatalError := ""
 	for _, file := range files {
 		log.Printf("Parsing '%s' with %v parser.", file, parser)
 		rawTransactions, err := parser.ParseRawTransactionsFromFile(file)
 		if err != nil {
-			log.Printf("!!! Can't parse transactions from '%s' file: %#v", file, err)
+			notFatalError = fmt.Sprintf("Can't parse transactions from '%s' file: %#v", file, err)
+			log.Println(notFatalError)
 		}
 		if len(rawTransactions) < 1 {
-			log.Printf("!!! Can't find transactions in '%s' file.", file)
+			notFatalError = fmt.Sprintf("Can't find transactions in '%s' file.", file)
+			log.Println(notFatalError)
 		}
 		log.Printf("Found %d transactions in '%s' file.", len(rawTransactions), file)
 		result = append(result, rawTransactions...)
 	}
-	return result, nil
+	return result, notFatalError, nil
 }
