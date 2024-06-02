@@ -6,3 +6,6 @@ test:
 
 coverage:
 	go tool cover -html=coverage.out
+
+build:
+	go build

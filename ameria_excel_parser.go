@@ -24,7 +24,7 @@ const MyAmeriaDateFormat = "02/01/2006"
 const giveUpFindHeaderAfterEmpty1Cells = 15
 
 var (
-	headers = []string{
+	xlsxHeaders = []string{
 		"Ամսաթիվ",
 		"Փաստ N",
 		"ԳՏ",
@@ -76,11 +76,11 @@ func (p MyAmeriaExcelFileParser) ParseRawTransactionsFromFile(
 	var isHeaderRowFound bool
 	for i, row := range firstSheet.Rows {
 		cells := row.Cells
-		if len(cells) < len(headers) {
+		if len(cells) < len(xlsxHeaders) {
 			return nil,
 				fmt.Errorf(
 					"%s: %d row has only %d cells while need to find information for headers %v",
-					filePath, i, len(cells), headers,
+					filePath, i, len(cells), xlsxHeaders,
 				)
 		}
 		// Find header row.
@@ -88,11 +88,11 @@ func (p MyAmeriaExcelFileParser) ParseRawTransactionsFromFile(
 			if i > giveUpFindHeaderAfterEmpty1Cells {
 				return nil, fmt.Errorf(
 					"%s: after scanning %d rows can't find headers %v",
-					filePath, i, headers,
+					filePath, i, xlsxHeaders,
 				)
 			}
 			var isCellMatches = true
-			for cellIndex, header := range headers {
+			for cellIndex, header := range xlsxHeaders {
 				if strings.TrimSpace(cells[cellIndex].String()) != header {
 					isCellMatches = false
 					break
@@ -107,7 +107,7 @@ func (p MyAmeriaExcelFileParser) ParseRawTransactionsFromFile(
 		}
 
 		// Stop if row doesn't have enough cells or first cell is empty.
-		if len(cells) < len(headers) || cells[0].String() == "" {
+		if len(cells) < len(xlsxHeaders) || cells[0].String() == "" {
 			break
 		}
 

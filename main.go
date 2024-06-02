@@ -72,12 +72,12 @@ func main() {
 	log.Printf("Using configuration: %+v", config)
 
 	// Parse files to raw transactions.
-	inecoTransactions, err := parseTransactionFiles(
+	transactions, err := parseTransactionFiles(
 		config.InecobankStatementFilesGlob,
 		InecoXmlParser{},
 	)
 	if err != nil {
-		fatalError(fmt.Sprintf("Can't parse Inecobank transactions: %#v", err), isOpenFileWithResult)
+		fatalError(fmt.Sprintf("Can't parse Inecobank statements: %#v", err), isOpenFileWithResult)
 	}
 	myAmeriaTransactions, err := parseTransactionFiles(
 		config.MyAmeriaHistoryFilesGlob,
@@ -87,9 +87,17 @@ func main() {
 		},
 	)
 	if err != nil {
-		fatalError(fmt.Sprintf("Can't parse MyAmeria transactions: %#v", err), isOpenFileWithResult)
+		fatalError(fmt.Sprintf("Can't parse MyAmeria History: %#v", err), isOpenFileWithResult)
 	}
-	transactions := append(inecoTransactions, myAmeriaTransactions...)
+	transactions = append(transactions, myAmeriaTransactions...)
+	ameriaCsvTransactions, err := parseTransactionFiles(
+		config.AmeriaCsvFilesGlob,
+		AmeriaCsvFileParser{},
+	)
+	if err != nil {
+		fatalError(fmt.Sprintf("Can't parse Ameria Business (from CSV) transactions: %#v", err), isOpenFileWithResult)
+	}
+	transactions = append(transactions, ameriaCsvTransactions...)
 	if len(transactions) < 1 {
 		fatalError(fmt.Sprintf("Can't find transactions, check that '%s' or '%s' matches something",
 			config.InecobankStatementFilesGlob, config.MyAmeriaHistoryFilesGlob), isOpenFileWithResult)

@@ -13,6 +13,7 @@ import (
 
 type Config struct {
 	InecobankStatementFilesGlob string              `yaml:"inecobankStatementFilesGlob" validate:"required,filepath,min=1"`
+	AmeriaCsvFilesGlob          string              `yaml:"ameriaCsvFilesGlob" validate:"required,filepath,min=1"`
 	MyAmeriaHistoryFilesGlob    string              `yaml:"myAmeriaHistoryFilesGlob" validate:"required,filepath,min=1"`
 	MyAmeriaMyAccounts          []string            `yaml:"myAmeriaMyAccounts,omitempty"`
 	MyAmeriaIncomeSubstrings    []string            `yaml:"myAmeriaIncomeSubstrings,omitempty"`

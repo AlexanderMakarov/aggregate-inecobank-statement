@@ -113,12 +113,13 @@ Merge to "master" and push tag with name "releaseX.X.X".
 
 - [x] Fail if wrong field in config found.
 - [x] Add CI for pull requests (different branches).
+- [x] Parse CSV-s from online.ameriabank.am.
+- [ ] Parse InecoBank XLS files which are sent in emails and
+      InecoBank doesn't allow to download data older than 2 years.
 - [ ] Rename repo to don't be tied to Inecobank.
 - [ ] Write instruction about MyAmeria. Record new video.
 - [ ] (?) Support different fields with parsing.
 - [ ] (?) More tests coverage.
-- [ ] Parse InecoBank XLS files which are sent in emails and
-      InecoBank doesn't allow to download data older than 2 years.
 - [ ] (?) Build translator to https://github.com/beancount/beancount
       Check in https://fava.pythonanywhere.com/example-beancount-file/editor/#
 - [ ] Build UI with Fyne and https://github.com/wcharczuk/go-chart
