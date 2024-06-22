@@ -80,9 +80,9 @@ func main() {
 	if err != nil {
 		fatalError(fmt.Sprintf("Can't parse Inecobank statements: %#v", err), isOpenFileWithResult)
 	}
-	if warning!= "" {
-		parsingWarnings = append(parsingWarnings, "Inecobank statements parsing warning: " + warning)
-    }
+	if warning != "" {
+		parsingWarnings = append(parsingWarnings, "Inecobank statements parsing warning: "+warning)
+	}
 	myAmeriaTransactions, warning, err := parseTransactionFiles(
 		config.MyAmeriaHistoryFilesGlob,
 		MyAmeriaExcelFileParser{
@@ -93,9 +93,9 @@ func main() {
 	if err != nil {
 		fatalError(fmt.Sprintf("Can't parse MyAmeria History: %#v", err), isOpenFileWithResult)
 	}
-	if warning!= "" {
-		parsingWarnings = append(parsingWarnings, "MyAmeria History parsing warning: " + warning)
-    }
+	if warning != "" {
+		parsingWarnings = append(parsingWarnings, "MyAmeria History parsing warning: "+warning)
+	}
 	transactions = append(transactions, myAmeriaTransactions...)
 	ameriaCsvTransactions, warning, err := parseTransactionFiles(
 		config.AmeriaCsvFilesGlob,
@@ -104,9 +104,9 @@ func main() {
 	if err != nil {
 		fatalError(fmt.Sprintf("Can't parse Ameria in-CSV transactions: %#v", err), isOpenFileWithResult)
 	}
-	if warning!= "" {
-		parsingWarnings = append(parsingWarnings, "Ameria in-CSV transactions parsing warning: " + warning)
-    }
+	if warning != "" {
+		parsingWarnings = append(parsingWarnings, "Ameria in-CSV transactions parsing warning: "+warning)
+	}
 	transactions = append(transactions, ameriaCsvTransactions...)
 	if len(transactions) < 1 {
 		fatalError(fmt.Sprintf("Can't find transactions, check that '%s' or '%s' matches something",
