@@ -1,9 +1,6 @@
-# Aggregate Inecobank Statements
-It is a local tool to investigate your expenses and incomes by bank transactions.
+# ~~Aggregate Inecobank Statements~~
 
-## FYI
-
-Will rename repo soon because it is no more "Inecobank" only application and therefore requires "rebranding".
+# **Migrated to [AM-Budget-View](https://github.com/AlexanderMakarov/am-budget-view) repository because app now supports AmeriaBank files and there are bigger plans for this.**
 
 ----
 
